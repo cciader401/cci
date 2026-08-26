@@ -8,7 +8,6 @@
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
     <style>
         .custom-scroll::-webkit-scrollbar {
@@ -148,16 +147,28 @@
                         <input type="text" id="buscador-alumnos" placeholder="🔍 Buscar por Nombre, DNI o Líder..." class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:border-pink-500 focus:outline-none shadow-inner">
                     </div>
 
-                    <div class="flex flex-wrap gap-2 my-4 no-export">
-                        <button onclick="descargarExcelActual()" class="bg-[#1f7244] text-white font-bold py-2 px-3 rounded-lg text-xs shadow hover:opacity-90">🟢 Excel (Escuela Activa)</button>
-                        <button onclick="descargarExcelTotal()" class="bg-[#145a32] text-white font-bold py-2 px-3 rounded-lg text-xs shadow hover:opacity-90">🟢 Excel (Todas)</button>
-                        <button onclick="descargarPDFActual()" class="bg-[#c0392b] text-white font-bold py-2 px-3 rounded-lg text-xs shadow hover:opacity-90">🔴 PDF (Escuela Activa)</button>
-                        <button onclick="descargarPDFTotal()" class="bg-[#78281f] text-white font-bold py-2 px-3 rounded-lg text-xs shadow hover:opacity-90">🔴 PDF (Todas)</button>
+                    <!-- CONTROLES DE EXPORTACIÓN EXCEL POR LÍDER -->
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 my-4 no-export space-y-3">
+                        <span class="text-xs font-bold text-slate-600 uppercase block">📊 Exportar Reportes a Excel (Por Líder):</span>
+                        
+                        <!-- Opción 1: Escuela actual + Líder seleccionado -->
+                        <div class="flex flex-col sm:flex-row gap-2 items-center">
+                            <select id="select-lider-activo" class="p-2 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-700 w-full sm:w-auto flex-1 focus:outline-none">
+                                <option value="">-- Seleccionar Líder (Escuela Actual) --</option>
+                            </select>
+                            <button onclick="descargarExcelLiderEscuelaActual()" class="w-full sm:w-auto bg-[#1f7244] text-white font-bold py-2 px-3 rounded-lg text-xs shadow hover:opacity-90 whitespace-nowrap">🟢 Excel (Líder en esta Escuela)</button>
+                        </div>
+
+                        <!-- Opción 2: Total de todas las escuelas para ese mismo líder -->
+                        <div class="flex flex-col sm:flex-row gap-2 items-center pt-2 border-t border-slate-200">
+                            <select id="select-lider-global" class="p-2 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-700 w-full sm:w-auto flex-1 focus:outline-none">
+                                <option value="">-- Seleccionar Líder (Todas las Escuelas) --</option>
+                            </select>
+                            <button onclick="descargarExcelLiderGlobal()" class="w-full sm:w-auto bg-[#145a32] text-white font-bold py-2 px-3 rounded-lg text-xs shadow hover:opacity-90 whitespace-nowrap">🟢 Excel (Total Líder en Todas)</button>
+                        </div>
                     </div>
 
-                    <div id="area-impresion-pdf">
-                        <div id="contenedor-escuelas" class="space-y-6"></div>
-                    </div>
+                    <div id="contenedor-escuelas" class="space-y-6"></div>
                 </div>
             </div>
         </div>
@@ -191,7 +202,7 @@
         }
 
         function cargarDatosIniciales() {
-            const guardados = localStorage.getItem('alumnos_sistema_asistencia_v2');
+            const guardados = localStorage.getItem('alumnos_sistema_asistencia_v4');
             if (guardados) {
                 try {
                     alumnos = JSON.parse(guardados);
@@ -207,8 +218,8 @@
             ];
 
             const lideres = [
-                "Marcos Silva", "Valeria Ríos", "Federico Peralta", "Camila Benítez", 
-                "Gonzalo Medina", "Lucía Gamarra", "Ezequiel Duarte", "Sofía Navarro", "Sin líder"
+                "Carlos Gómez", "Marcos Silva", "Valeria Ríos", "Federico Peralta", 
+                "Camila Benítez", "Gonzalo Medina", "Lucía Gamarra", "Sin líder"
             ];
 
             const nombresBase = [
@@ -229,8 +240,6 @@
                     const nombreAleatorio = nombresBase[(i * 7) % nombresBase.length] + " " + apellidosBase[(i * 3) % apellidosBase.length];
                     const liderAleatorio = lideres[(i + esc.nombre.length) % lideres.length];
                     const esSin = liderAleatorio.toLowerCase().includes("sin líder");
-                    
-                    // Variedad demo de faltas (0, 1, 2, 3, 4, 5)
                     let faltasAleatorias = i % 6; 
                     
                     alumnos.push({
@@ -249,7 +258,7 @@
         }
 
         function guardarEnStorage() {
-            localStorage.setItem('alumnos_sistema_asistencia_v2', JSON.stringify(alumnos));
+            localStorage.setItem('alumnos_sistema_asistencia_v4', JSON.stringify(alumnos));
         }
 
         cargarDatosIniciales();
@@ -377,7 +386,45 @@
             }
         });
 
+        function actualizarSelectoresLideres() {
+            const selectLiderActivo = document.getElementById('select-lider-activo');
+            const selectLiderGlobal = document.getElementById('select-lider-global');
+            
+            const valorActivoAnterior = selectLiderActivo.value;
+            const valorGlobalAnterior = selectLiderGlobal.value;
+
+            // 1. Líderes de la escuela activa
+            const alumnosDeEscuela = alumnos.filter(al => al.escuela.trim().toLowerCase() === escuelaSeleccionada.toLowerCase());
+            const lideresEscuelaUnicos = [...new Set(alumnosDeEscuela.map(a => a.lider))].sort();
+
+            selectLiderActivo.innerHTML = `<option value="">-- Seleccionar Líder (${escuelaSeleccionada}) --</option>`;
+            lideresEscuelaUnicos.forEach(lider => {
+                const opt = document.createElement('option');
+                opt.value = lider;
+                opt.innerText = lider;
+                selectLiderActivo.appendChild(opt);
+            });
+            if (lideresEscuelaUnicos.includes(valorActivoAnterior)) {
+                selectLiderActivo.value = valorActivoAnterior;
+            }
+
+            // 2. Todos los líderes globales de todo el sistema
+            const lideresGlobalesUnicos = [...new Set(alumnos.map(a => a.lider))].sort();
+
+            selectLiderGlobal.innerHTML = `<option value="">-- Seleccionar Líder (Todas las Escuelas) --</option>`;
+            lideresGlobalesUnicos.forEach(lider => {
+                const opt = document.createElement('option');
+                opt.value = lider;
+                opt.innerText = lider;
+                selectLiderGlobal.appendChild(opt);
+            });
+            if (lideresGlobalesUnicos.includes(valorGlobalAnterior)) {
+                selectLiderGlobal.value = valorGlobalAnterior;
+            }
+        }
+
         function actualizarTabla() {
+            actualizarSelectoresLideres();
             const contenedor = document.getElementById('contenedor-escuelas');
             contenedor.innerHTML = "";
             const filtro = document.getElementById('buscador-alumnos').value.toLowerCase().trim();
@@ -483,12 +530,11 @@
             contenedor.appendChild(divEscuela);
         }
 
-        // BÚSQUEDA Y OCULTAMIENTO DE TECLADO AL PRESIONAR ENTER
         const inputBuscador = document.getElementById('buscador-alumnos');
         inputBuscador.addEventListener('input', actualizarTabla);
         inputBuscador.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
-                inputBuscador.blur(); // Oculta el teclado virtual del celular
+                inputBuscador.blur(); 
             }
         });
 
@@ -513,131 +559,61 @@
             mostrarViñeta("Estado actualizado", "success");
         }
 
-        function obtenerDatosOrdenados(listaAlumnos) {
-            let copia = [...listaAlumnos];
-            copia.sort((a, b) => {
-                const escA = (a.escuela || "").toLowerCase();
-                const escB = (b.escuela || "").toLowerCase();
-                if (escA !== escB) return escA.localeCompare(escB);
+        // EXPORTACIÓN 1: Escuela actual + Líder seleccionado
+        function descargarExcelLiderEscuelaActual() {
+            const liderSeleccionado = document.getElementById('select-lider-activo').value;
+            if (!liderSeleccionado) {
+                return mostrarViñeta("⚠️ Por favor, seleccioná un líder de la escuela actual.", "warning");
+            }
 
-                const liderA = (a.lider || "").toLowerCase();
-                const liderB = (b.lider || "").toLowerCase();
-                if (liderA !== liderB) return liderA.localeCompare(liderB);
+            const filtrados = alumnos.filter(al => 
+                al.escuela.trim().toLowerCase() === escuelaSeleccionada.toLowerCase() && 
+                al.lider === liderSeleccionado
+            );
 
-                const nombreA = (a.nombreCompleto || "").toLowerCase();
-                const nombreB = (b.nombreCompleto || "").toLowerCase();
-                return nombreA.localeCompare(nombreB);
-            });
-            return copia;
-        }
-
-        function descargarExcelActual() {
-            const filtrados = alumnos.filter(al => al.escuela.trim().toLowerCase() === escuelaSeleccionada.toLowerCase());
-            const ordenados = obtenerDatosOrdenados(filtrados);
-            const datosExportar = ordenados.map(a => ({
+            const datosExportar = filtrados.map(a => ({
                 Escuela: a.escuela,
+                Lider: a.lider,
                 Alumno: a.nombreCompleto,
                 DNI: a.dni,
-                Lider: a.lider,
                 Celular: a.celular,
                 Faltas: a.faltas,
                 Condicion: a.condicionManual !== null ? a.condicionManual : (a.faltas >= 4 ? "Libre / Desaprobado" : "Aprobado"),
                 Estado: a.estado
             }));
+
             const s = XLSX.utils.json_to_sheet(datosExportar); 
             const b = XLSX.utils.book_new(); 
-            XLSX.utils.book_append_sheet(b, s, escuelaSeleccionada); 
-            XLSX.writeFile(b, `Reporte_${escuelaSeleccionada.replace(/\s+/g, '_')}.xlsx`);
+            XLSX.utils.book_append_sheet(b, s, "Lider_Escuela"); 
+            XLSX.writeFile(b, `Reporte_${escuelaSeleccionada}_Lider_${liderSeleccionado.replace(/\s+/g, '_')}.xlsx`);
+            mostrarViñeta("Excel generado correctamente.", "success");
         }
 
-        function descargarExcelTotal() {
-            const ordenados = obtenerDatosOrdenados(alumnos);
-            const datosExportar = ordenados.map(a => ({
+        // EXPORTACIÓN 2: Total de todas las escuelas para el líder seleccionado
+        function descargarExcelLiderGlobal() {
+            const liderSeleccionado = document.getElementById('select-lider-global').value;
+            if (!liderSeleccionado) {
+                return mostrarViñeta("⚠️ Por favor, seleccioná un líder de la lista global.", "warning");
+            }
+
+            const filtrados = alumnos.filter(al => al.lider === liderSeleccionado);
+
+            const datosExportar = filtrados.map(a => ({
                 Escuela: a.escuela,
+                Lider: a.lider,
                 Alumno: a.nombreCompleto,
                 DNI: a.dni,
-                Lider: a.lider,
                 Celular: a.celular,
                 Faltas: a.faltas,
                 Condicion: a.condicionManual !== null ? a.condicionManual : (a.faltas >= 4 ? "Libre / Desaprobado" : "Aprobado"),
                 Estado: a.estado
             }));
+
             const s = XLSX.utils.json_to_sheet(datosExportar); 
             const b = XLSX.utils.book_new(); 
-            XLSX.utils.book_append_sheet(b, s, "Todas_Las_Escuelas"); 
-            XLSX.writeFile(b, "Reporte_General_Todas_Escuelas.xlsx");
-        }
-
-        function descargarPDFActual() {
-            const elementoImpresion = document.getElementById('area-impresion-pdf');
-            html2pdf().from(elementoImpresion).set({
-                margin: 10,
-                filename: `Reporte_${escuelaSeleccionada.replace(/\s+/g, '_')}.pdf`,
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            }).save();
-        }
-
-        function descargarPDFTotal() {
-            const contenedorTemporal = document.createElement('div');
-            contenedorTemporal.className = "bg-white p-4 space-y-6";
-            
-            const listaEscuelas = ["ABC", "Nivel 1", "Nivel 2", "Nivel 3"];
-            listaEscuelas.forEach(nombreEscuela => {
-                let filtrados = alumnos.filter(al => al.escuela.trim().toLowerCase() === nombreEscuela.toLowerCase());
-                let ordenados = obtenerDatosOrdenados(filtrados);
-
-                let divEscuela = document.createElement('div');
-                divEscuela.className = "bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm mb-4";
-                
-                let htmlTabla = `
-                    <div class="bg-slate-900 text-white px-4 py-2.5 font-bold text-sm uppercase tracking-wider flex justify-between items-center">
-                        <span>Escuela: ${nombreEscuela}</span>
-                        <span class="text-xs bg-pink-600 px-2 py-0.5 rounded-full">${ordenados.length} alumnos</span>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse text-xs">
-                            <thead>
-                                <tr class="bg-slate-50 border-b border-slate-200 font-bold uppercase text-slate-600">
-                                    <th class="p-3">Alumno</th>
-                                    <th class="p-3">DNI</th>
-                                    <th class="p-3">Líder / Cel</th>
-                                    <th class="p-3 text-center">Faltas</th>
-                                    <th class="p-3">Condición</th>
-                                    <th class="p-3">Estado</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100">
-                `;
-
-                if (ordenados.length === 0) {
-                    htmlTabla += `<tr><td colspan="6" class="p-4 text-center text-slate-400 italic">No hay alumnos registrados en esta sección.</td></tr>`;
-                } else {
-                    ordenados.forEach(al => {
-                        let condicionFinal = al.condicionManual !== null ? al.condicionManual : (al.faltas >= 4 ? "Libre / Desaprobado" : "Aprobado");
-                        htmlTabla += `
-                            <tr class="border-b border-slate-100">
-                                <td class="p-3 font-semibold">${al.nombreCompleto.toUpperCase()}</td>
-                                <td class="p-3 text-slate-500 font-mono">${al.dni}</td>
-                                <td class="p-3">${al.lider} ${al.celular ? '(Cel: ' + al.celular + ')' : ''}</td>
-                                <td class="p-3 text-center font-bold">${al.faltas}</td>
-                                <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${condicionFinal==='Aprobado'?'bg-emerald-100 text-emerald-800':'bg-red-600 text-white'}">${condicionFinal}</span></td>
-                                <td class="p-3 font-bold ${al.estado==='Presente'?'text-emerald-600':'text-slate-600'}">${al.estado}</td>
-                            </tr>
-                        `;
-                    });
-                }
-                htmlTabla += `</tbody></table></div>`;
-                divEscuela.innerHTML = htmlTabla;
-                contenedorTemporal.appendChild(divEscuela);
-            });
-
-            html2pdf().from(contenedorTemporal).set({
-                margin: 10,
-                filename: 'Reporte_General_Todas_Escuelas.pdf',
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
-            }).save();
+            XLSX.utils.book_append_sheet(b, s, "Total_Lider"); 
+            XLSX.writeFile(b, `Reporte_Total_TodasEscuelas_Lider_${liderSeleccionado.replace(/\s+/g, '_')}.xlsx`);
+            mostrarViñeta("Reporte total del líder descargado.", "success");
         }
 
         function inicializarEscaner() {
