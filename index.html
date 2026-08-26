@@ -26,15 +26,33 @@
         .custom-scroll::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
         }
+        /* Imagen de fondo general con opacidad sutil */
+        body::before {
+            content: "";
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            z-index: -1; 
+            background-image: url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQb2vUYikyevx8z8Bkg1x5XW-PrUv-9DzfTIPugqois49rI9fhCR-GOpVWl&s=10'); 
+            background-position: center;
+            background-repeat: no-repeat;
+            background-size: 75% auto; 
+            opacity: 0.05; 
+            pointer-events: none;
+        }
     </style>
 </head>
 <body class="text-slate-800 font-sans min-h-screen flex flex-col items-center antialiased pb-10" style="background-color: #fafbfd;">
 
     <div id="notification-container" class="fixed top-5 right-5 z-50 flex flex-col gap-3.5"></div>
 
-    <div class="w-full max-w-5xl py-12 px-4 rounded-b-2xl shadow-lg border-b-4 border-pink-600 text-center relative overflow-hidden mb-6 bg-slate-900 text-white">
-        <h1 class="m-0 text-3xl md:text-4xl font-extrabold uppercase tracking-wider">Control de Asistencias</h1>
-        <p class="m-0 mt-2 text-slate-300 text-sm md:text-base font-medium">Sistema Inteligente con Escaneo Local y Estadísticas</p>
+    <!-- Banner superior con imagen de fondo y degradado -->
+    <div class="w-full max-w-5xl py-12 px-4 rounded-b-2xl shadow-lg border-b-4 border-pink-600 text-center relative overflow-hidden mb-6 text-white"
+         style="background-image: linear-gradient(rgba(26, 54, 93, 0.85), rgba(26, 54, 93, 0.85)), url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSSPFDgrwRHjbVD_Nl2JOmBWqz6hX457GV0IMJ6j2isnXOXOOO2EMhH0W0&s=10'); background-size: 100% 100%; background-repeat: no-repeat; background-position: center;">
+        <h1 class="m-0 text-3xl md:text-4xl font-extrabold uppercase tracking-wider drop-shadow-sm">Control de Asistencias</h1>
+        <p class="m-0 mt-2 text-slate-200 text-sm md:text-base font-medium opacity-90">Sistema Inteligente con Escaneo Local y Estadísticas</p>
     </div>
 
     <!-- VISTA INSCRIPCIÓN ALUMNO -->
@@ -156,7 +174,6 @@
 
         let alumnos = [];
 
-        // Sistema de Audio Web nativo para los Beeps (sin archivos externos)
         function reproducirSonido(tipo) {
             try {
                 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
@@ -190,7 +207,6 @@
                 } catch(e) {}
             }
             
-            // Datos demo iniciales si no hay en localStorage
             const escuelas = [
                 { nombre: "ABC", cantidad: 103 },
                 { nombre: "Nivel 1", cantidad: 214 },
@@ -369,7 +385,6 @@
                 return nombreA.localeCompare(nombreB);
             });
 
-            // Actualizar estadísticas de la escuela seleccionada
             let totalEscuela = alumnos.filter(al => al.escuela.trim().toLowerCase() === nombreEscuela.toLowerCase());
             let cantPresentes = totalEscuela.filter(al => al.estado === "Presente").length;
             let cantAusentes = totalEscuela.filter(al => al.estado === "Ausente").length;
@@ -614,7 +629,6 @@
                 let al = alumnos.find(a => a.dni === dniLimpio);
                 
                 if (al) {
-                    // Verificación de doble escaneo
                     if (al.estado === "Presente") {
                         reproducirSonido('error');
                         boxScanner.className = "bg-amber-100 rounded-2xl p-6 shadow-md border-2 border-amber-500 flex flex-col md:col-span-1 transition-all duration-300";
@@ -635,7 +649,6 @@
                         return;
                     }
 
-                    // Éxito de ingreso
                     reproducirSonido('success');
                     boxScanner.className = "bg-emerald-100 rounded-2xl p-6 shadow-md border-2 border-emerald-500 flex flex-col md:col-span-1 transition-all duration-300";
                     msgScanner.className = "mt-3 text-center text-xs font-extrabold text-emerald-800";
@@ -646,7 +659,6 @@
                     actualizarTabla();
                     mostrarViñeta(`✅ Presente registrado: ${al.nombreCompleto}`, "success");
 
-                    // Volver al color normal del escáner a los 3 segundos
                     setTimeout(() => {
                         boxScanner.className = "bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col md:col-span-1 transition-all duration-300";
                         msgScanner.className = "mt-3 text-center text-xs font-bold text-slate-500";
