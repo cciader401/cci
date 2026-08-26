@@ -26,7 +26,6 @@
         <p class="text-xs text-slate-400 mb-6">Ingresá tus datos para registrarte y generar tu credencial.</p>
         
         <form id="form-alumno" class="space-y-4 text-left" onsubmit="return false;">
-            <!-- ESCUELA PRIMERO -->
             <div class="flex flex-col">
                 <label class="text-xs font-semibold text-slate-500 mb-1">Seleccionar Escuela:</label>
                 <select id="al-escuela" class="p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-pink-500 focus:outline-none">
@@ -50,10 +49,9 @@
             <div class="flex flex-col">
                 <label class="text-xs font-semibold text-slate-500 mb-1">Nombre de líder:</label>
                 <input type="text" id="al-lider" placeholder="Ej: Carlos Gómez" class="p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-pink-500 focus:outline-none">
-                <span class="text-[11px] text-slate-400 mt-1 italic">Si no tenés líder escribí <b>sin líder</b> para que se te asigne uno.</span>
+                <span class="text-[11px] text-slate-400 mt-1 italic">Si no tenés líder escribí <b>Sin líder</b> para que se te asigne uno.</span>
             </div>
 
-            <!-- CAMPO DINÁMICO DE CELULAR (Aparece SOLO si escribe "sin líder") -->
             <div id="box-celular" class="hidden flex-col">
                 <label class="text-xs font-semibold text-pink-600 mb-1">Número de Celular (Solo números, sin espacios ni símbolos):</label>
                 <input type="tel" id="al-celular" placeholder="Ej: 1122334455" class="p-3 bg-pink-50/50 border border-pink-200 rounded-lg text-sm focus:border-pink-500 focus:outline-none">
@@ -81,9 +79,6 @@
             <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col md:col-span-1">
                 <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-2">📸 Escáner de Entrada</h2>
                 <div id="reader" class="w-full max-w-[260px] mx-auto rounded-xl overflow-hidden shadow-inner !border-0"></div>
-                <div id="cartel-gigante" class="mt-4 p-4 rounded-xl text-center font-extrabold uppercase transition-all hidden border duration-300">
-                    <span id="cartel-texto-grande" class="block text-base tracking-wide"></span>
-                </div>
             </div>
 
             <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 overflow-hidden md:col-span-2 flex flex-col">
@@ -99,41 +94,25 @@
                         <button class="bg-[#c0392b] text-white font-bold py-2 px-3 rounded-lg text-xs" id="btn-pdf">🔴 Reporte PDF</button>
                     </div>
 
-                    <div class="overflow-x-auto rounded-xl border border-slate-100">
-                        <table class="w-full text-left border-collapse text-xs">
-                            <thead>
-                                <tr class="bg-slate-50 border-b border-slate-200 font-bold uppercase text-slate-600">
-                                    <th class="p-3">Escuela</th>
-                                    <th class="p-3">Alumno</th>
-                                    <th class="p-3">DNI</th>
-                                    <th class="p-3">Líder / Cel</th>
-                                    <th class="p-3 text-center">Faltas</th>
-                                    <th class="p-3">Condición</th>
-                                    <th class="p-3 no-export">Acción</th>
-                                </tr>
-                            </thead>
-                            <tbody id="cuerpo-tabla" class="divide-y divide-slate-100"></tbody>
-                        </table>
-                    </div>
+                    <!-- CONTENEDOR DINÁMICO SEPARADO POR ESCUELAS -->
+                    <div id="contenedor-escuelas" class="space-y-6"></div>
                 </div>
             </div>
         </div>
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbwXs6J9bBK1xRXSYhM5cMEKQzCcX9KltQJhPqwb8-PSxQ3pefXOllAy7sey2xzTSM4YXQ/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzD97JFnVZ-ynpEpMAn9MIsNooIFcGvS_mpQdgtEBrBS-UNrmyf7juZ5K3WVZy9Iv1rRA/exec";
 
         let alumnos = [];
         const urlParams = new URLSearchParams(window.location.search);
         const esAdmin = urlParams.get('admin') === 'true';
 
-        // Control dinámico del campo de celular según el líder ingresado
         const inputLider = document.getElementById('al-lider');
         const boxCelular = document.getElementById('box-celular');
 
         inputLider.addEventListener('input', () => {
             const valor = inputLider.value.trim().toLowerCase();
-            // Solo se abre si tipean exactamente o incluye la frase "sin líder" / "sin lider"
             if (valor === 'sin líder' || valor === 'sin lider') {
                 boxCelular.style.display = 'flex';
             } else {
@@ -168,24 +147,17 @@
             const lider = document.getElementById('al-lider').value.trim();
             let celular = document.getElementById('al-celular').value.trim();
 
-            // Validaciones estrictas
-            // 1. Nombre solo letras y espacios (incluyendo tildes y Ñ)
             const regexLetras = /^[A-Za-záéíóúÁÉÍÓÚñÑ\s]+$/;
             if (!nombreCompleto || !regexLetras.test(nombreCompleto)) {
                 return mostrarViñeta("El nombre y apellido solo debe contener letras.", "error");
             }
-
-            // 2. DNI solo números (7 u 8 dígitos)
             if (!/^[0-9]{7,8}$/.test(dni)) {
                 return mostrarViñeta("El DNI debe contener solo números (7 u 8 dígitos).", "error");
             }
-
-            // 3. Líder obligatorio (si está vacío)
             if (!lider) {
                 return mostrarViñeta("Por favor, ingresá el nombre de tu líder o escribí 'sin líder'.", "error");
             }
 
-            // Si puso líder con nombre propio, validamos que no tenga números ni símbolos extraños
             const liderLower = lider.toLowerCase();
             const esSinLider = (liderLower === 'sin líder' || liderLower === 'sin lider');
 
@@ -193,7 +165,6 @@
                 return mostrarViñeta("El nombre del líder solo debe contener letras.", "error");
             }
 
-            // 4. Si es "sin líder", el celular es obligatorio y debe ser puramente numérico
             if (esSinLider) {
                 if (!celular) {
                     return mostrarViñeta("Ingresá tu número de celular para asignarte un líder.", "error");
@@ -202,7 +173,7 @@
                     return mostrarViñeta("El número de celular solo debe contener números (sin símbolos ni letras).", "error");
                 }
             } else {
-                celular = ""; // Si tiene líder propio, no se envía celular
+                celular = ""; 
             }
 
             document.getElementById('btn-alumno-registrar').innerText = "Procesando...";
@@ -237,55 +208,113 @@
         }
 
         function actualizarTabla() {
-            const tbody = document.getElementById('cuerpo-tabla');
-            tbody.innerHTML = "";
+            const contenedor = document.getElementById('contenedor-escuelas');
+            contenedor.innerHTML = "";
             const filtro = document.getElementById('buscador-alumnos').value.toLowerCase().trim();
 
-            alumnos.forEach((al, idx) => {
-                const coincide = al.nombreCompleto.toLowerCase().includes(filtro) || al.dni.toString().includes(filtro) || al.lider.toLowerCase().includes(filtro);
-                if (filtro && !coincide) return;
+            const escuelasDisponibles = ["ABC", "Nivel 1", "Nivel 2", "Nivel 3"];
 
-                const tr = document.createElement('tr');
-                let colorFila = "hover:bg-slate-50";
-                let condicionTexto = "Aprobado";
-                if (al.faltas >= 4) {
-                    condicionTexto = "Desaprobado";
-                    colorFila = "bg-red-50 hover:bg-red-100 border-l-4 border-red-500 text-red-950";
-                } else if (al.faltas === 3) {
-                    colorFila = "bg-amber-50 hover:bg-amber-100 border-l-4 border-amber-500";
+            escuelasDisponibles.forEach(nombreEscuela => {
+                const alumnosEscuela = alumnos.filter(al => {
+                    const coincideEscuela = al.escuela.trim().toLowerCase() === nombreEscuela.toLowerCase();
+                    const coincideBusqueda = al.nombreCompleto.toLowerCase().includes(filtro) || al.dni.toString().includes(filtro) || al.lider.toLowerCase().includes(filtro);
+                    return coincideEscuela && (!filtro || coincideBusqueda);
+                });
+
+                if (filtro && alumnosEscuela.length === 0) return;
+
+                const divEscuela = document.createElement('div');
+                divEscuela.className = "bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm mb-4";
+                
+                let htmlTabla = `
+                    <div class="bg-slate-900 text-white px-4 py-2.5 font-bold text-sm uppercase tracking-wider flex justify-between items-center">
+                        <span>Escuela: ${nombreEscuela}</span>
+                        <span class="text-xs bg-pink-600 px-2 py-0.5 rounded-full">${alumnosEscuela.length} alumnos</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200 font-bold uppercase text-slate-600">
+                                    <th class="p-3">Alumno</th>
+                                    <th class="p-3">DNI</th>
+                                    <th class="p-3">Líder / Cel</th>
+                                    <th class="p-3 text-center">Faltas (Control)</th>
+                                    <th class="p-3">Condición</th>
+                                    <th class="p-3 no-export">Acción</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                `;
+
+                if (alumnosEscuela.length === 0) {
+                    htmlTabla += `<tr><td colspan="6" class="p-4 text-center text-slate-400 italic">No hay alumnos registrados en esta sección.</td></tr>`;
+                } else {
+                    alumnos.forEach((al, realIdx) => {
+                        if (al.escuela.trim().toLowerCase() !== nombreEscuela.toLowerCase()) return;
+                        const coincideBusqueda = al.nombreCompleto.toLowerCase().includes(filtro) || al.dni.toString().includes(filtro) || al.lider.toLowerCase().includes(filtro);
+                        if (filtro && !coincideBusqueda) return;
+
+                        let colorFila = "hover:bg-slate-50";
+                        let condicionTexto = "Aprobado";
+                        if (al.faltas >= 4) {
+                            condicionTexto = "Desaprobado";
+                            colorFila = "bg-red-50 hover:bg-red-100 border-l-4 border-red-500 text-red-950";
+                        } else if (al.faltas === 3) {
+                            colorFila = "bg-amber-50 hover:bg-amber-100 border-l-4 border-amber-500";
+                        }
+
+                        htmlTabla += `
+                            <tr class="border-b border-slate-100 ${colorFila}">
+                                <td class="p-3 font-semibold">${al.nombreCompleto.toUpperCase()}</td>
+                                <td class="p-3 text-slate-500 font-mono">${al.dni}</td>
+                                <td class="p-3">${al.lider} ${al.celular ? '<br><span class="text-[10px] text-pink-600 font-bold">Cel: ' + al.celular + '</span>' : ''}</td>
+                                <td class="p-3 text-center">
+                                    <div class="inline-flex items-center gap-1.5 bg-slate-100 px-2 py-1 rounded-lg border border-slate-200">
+                                        <button onclick="cambiarFaltas(${realIdx}, -1)" class="w-5 h-5 bg-white rounded shadow-sm text-slate-700 font-bold hover:bg-red-100 hover:text-red-600 flex items-center justify-center">-</button>
+                                        <span class="font-extrabold text-sm px-1 min-w-[18px] text-center">${al.faltas}</span>
+                                        <button onclick="cambiarFaltas(${realIdx}, 1)" class="w-5 h-5 bg-white rounded shadow-sm text-slate-700 font-bold hover:bg-emerald-100 hover:text-emerald-600 flex items-center justify-center">+</button>
+                                    </div>
+                                </td>
+                                <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${condicionTexto==='Aprobado'?'bg-emerald-100 text-emerald-800':'bg-red-600 text-white'}">${condicionTexto}</span></td>
+                                <td class="p-3 no-export">
+                                    <select onchange="modificarEstado(${realIdx}, this.value)" class="p-1 border rounded text-xs bg-white">
+                                        <option value="Presente" ${al.estado==='Presente'?'selected':''}>Presente</option>
+                                        <option value="Ausente" ${al.estado==='Ausente'?'selected':''}>Ausente</option>
+                                    </select>
+                                </td>
+                            </tr>
+                        `;
+                    });
                 }
 
-                tr.className = `border-b border-slate-100 ${colorFila}`;
-                tr.innerHTML = `
-                    <td class="p-3 font-medium">${al.escuela}</td>
-                    <td class="p-3 font-semibold">${al.nombreCompleto.toUpperCase()}</td>
-                    <td class="p-3 text-slate-500 font-mono">${al.dni}</td>
-                    <td class="p-3">${al.lider} ${al.celular ? '<br><span class="text-[10px] text-pink-600 font-bold">Cel: ' + al.celular + '</span>' : ''}</td>
-                    <td class="p-3 text-center font-extrabold text-sm">${al.faltas}</td>
-                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${condicionTexto==='Aprobado'?'bg-emerald-100 text-emerald-800':'bg-red-600 text-white'}">${condicionTexto}</span></td>
-                    <td class="p-3 no-export">
-                        <select onchange="modificarDesdeAdmin(${idx}, this.value)" class="p-1 border rounded text-xs bg-white">
-                            <option value="Presente" ${al.estado==='Presente'?'selected':''}>Presente</option>
-                            <option value="Ausente" ${al.estado==='Ausente'?'selected':''}>Ausente (+1 Falta)</option>
-                        </select>
-                    </td>
-                `;
-                tbody.appendChild(tr);
+                htmlTabla += `</tbody></table></div>`;
+                divEscuela.innerHTML = htmlTabla;
+                contenedor.appendChild(divEscuela);
             });
         }
 
         document.getElementById('buscador-alumnos').addEventListener('input', actualizarTabla);
 
-        async function modificarDesdeAdmin(idx, nuevoEstado) {
+        async function cambiarFaltas(idx, cantidad) {
             const al = alumnos[idx];
-            if (nuevoEstado === 'Ausente' && al.estado !== 'Ausente') {
-                al.faltas += 1;
+            al.faltas = Math.max(0, al.faltas + cantidad);
+
+            try {
+                await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "actualizar", dni: al.dni, faltas: al.faltas, estado: al.estado }) });
+                mostrarViñeta("Faltas actualizadas correctamente", "success");
+            } catch(e) { 
+                mostrarViñeta("Error al guardar en la nube", "error"); 
             }
+            cargarDatosDesdeSheets();
+        }
+
+        async function modificarEstado(idx, nuevoEstado) {
+            const al = alumnos[idx];
             al.estado = nuevoEstado;
 
             try {
                 await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "actualizar", dni: al.dni, faltas: al.faltas, estado: nuevoEstado }) });
-                mostrarViñeta("Sincronizado con éxito", "success");
+                mostrarViñeta("Estado sincronizado con éxito", "success");
             } catch(e) { mostrarViñeta("Error al guardar en la nube", "error"); }
             cargarDatosDesdeSheets();
         }
@@ -293,6 +322,23 @@
         function inicializarEscaner() {
             const scan = new Html5QrcodeScanner("reader", { fps: 12, qrbox: 200 });
             scan.render(async (dniLeido) => {
+                const ahora = new Date();
+                const diaSemana = ahora.getDay();
+                const hora = ahora.getHours();
+                const minutos = ahora.getMinutes();
+                const horaActualMinutos = hora * 60 + minutos;
+
+                const inicioMinutos = 19 * 60;
+                const finMinutos = 23 * 60;
+
+                const esDiaValido = (diaSemana === 4 || diaSemana === 5);
+                const esHorarioValido = (horaActualMinutos >= inicioMinutos && horaActualMinutos <= finMinutos);
+
+                if (!esDiaValido || !esHorarioValido) {
+                    mostrarViñeta("❌ Fuera de horario: Las clases son Jueves y Viernes de 19:00 a 23:00 hs.", "error");
+                    return;
+                }
+
                 let al = alumnos.find(a => a.dni === dniLeido.trim());
                 if (al) {
                     if (al.faltas >= 4) {
