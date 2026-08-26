@@ -36,22 +36,26 @@
                     <option value="Nivel 3">Nivel 3 </option>
                 </select>
             </div>
+            
             <div class="flex flex-col">
-                <label class="text-xs font-semibold text-slate-500 mb-1">Nombre y Apellido:</label>
+                <label class="text-xs font-semibold text-slate-500 mb-1">Nombre y Apellido (Solo letras):</label>
                 <input type="text" id="al-nombre" required placeholder="Ej: Juan Pérez" class="p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-pink-500 focus:outline-none">
             </div>
+
             <div class="flex flex-col">
                 <label class="text-xs font-semibold text-slate-500 mb-1">DNI (Solo números):</label>
-                <input type="text" id="al-dni" required placeholder="Ej: 46123456" class="p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-pink-500 focus:outline-none">
+                <input type="text" id="al-dni" required maxlength="8" placeholder="Ej: 46123456" class="p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-pink-500 focus:outline-none">
             </div>
+
             <div class="flex flex-col">
                 <label class="text-xs font-semibold text-slate-500 mb-1">Nombre de líder:</label>
                 <input type="text" id="al-lider" placeholder="Ej: Carlos Gómez" class="p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-pink-500 focus:outline-none">
-                <span class="text-[11px] text-slate-400 mt-1 italic">Si no tenés líder escribí **N/N** para que se te asigne uno.</span>
+                <span class="text-[11px] text-slate-400 mt-1 italic">Si no tenés líder escribí <b>sin líder</b> para que se te asigne uno.</span>
             </div>
-            <!-- CAMPO DINÁMICO DE CELULAR (Aparece solo si el campo de líder está vacío o es NN) -->
-            <div id="box-celular" class="flex flex-col">
-                <label class="text-xs font-semibold text-pink-600 mb-1">Número de Celular (Para asignarte líder):</label>
+
+            <!-- CAMPO DINÁMICO DE CELULAR (Aparece SOLO si escribe "sin líder") -->
+            <div id="box-celular" class="hidden flex-col">
+                <label class="text-xs font-semibold text-pink-600 mb-1">Número de Celular (Solo números, sin espacios ni símbolos):</label>
                 <input type="tel" id="al-celular" placeholder="Ej: 1122334455" class="p-3 bg-pink-50/50 border border-pink-200 rounded-lg text-sm focus:border-pink-500 focus:outline-none">
             </div>
 
@@ -127,12 +131,10 @@
         const inputLider = document.getElementById('al-lider');
         const boxCelular = document.getElementById('box-celular');
 
-        // Por defecto arranca visible o adaptado a que está vacío (lo toma como NN)
-        boxCelular.style.display = 'flex';
-
         inputLider.addEventListener('input', () => {
-            const valor = inputLider.value.trim().toUpperCase();
-            if (valor === 'NN' || valor === '') {
+            const valor = inputLider.value.trim().toLowerCase();
+            // Solo se abre si tipean exactamente o incluye la frase "sin líder" / "sin lider"
+            if (valor === 'sin líder' || valor === 'sin lider') {
                 boxCelular.style.display = 'flex';
             } else {
                 boxCelular.style.display = 'none';
@@ -163,16 +165,45 @@
             const escuela = document.getElementById('al-escuela').value;
             const nombreCompleto = document.getElementById('al-nombre').value.trim();
             const dni = document.getElementById('al-dni').value.trim();
-            let lider = document.getElementById('al-lider').value.trim();
-            
-            // Si el campo líder está vacío, se guarda automáticamente como "NN"
-            if(!lider) lider = "NN";
-            
+            const lider = document.getElementById('al-lider').value.trim();
             let celular = document.getElementById('al-celular').value.trim();
 
-            if(!/^[0-9]{7,8}$/.test(dni)) return mostrarViñeta("DNI Inválido (7 u 8 dígitos)", "error");
-            if(!nombreCompleto) return mostrarViñeta("Ingresá tu nombre y apellido", "error");
-            if((lider.toUpperCase() === 'NN') && !celular) return mostrarViñeta("Ingresá tu celular para asignarte líder", "error");
+            // Validaciones estrictas
+            // 1. Nombre solo letras y espacios (incluyendo tildes y Ñ)
+            const regexLetras = /^[A-Za-záéíóúÁÉÍÓÚñÑ\s]+$/;
+            if (!nombreCompleto || !regexLetras.test(nombreCompleto)) {
+                return mostrarViñeta("El nombre y apellido solo debe contener letras.", "error");
+            }
+
+            // 2. DNI solo números (7 u 8 dígitos)
+            if (!/^[0-9]{7,8}$/.test(dni)) {
+                return mostrarViñeta("El DNI debe contener solo números (7 u 8 dígitos).", "error");
+            }
+
+            // 3. Líder obligatorio (si está vacío)
+            if (!lider) {
+                return mostrarViñeta("Por favor, ingresá el nombre de tu líder o escribí 'sin líder'.", "error");
+            }
+
+            // Si puso líder con nombre propio, validamos que no tenga números ni símbolos extraños
+            const liderLower = lider.toLowerCase();
+            const esSinLider = (liderLower === 'sin líder' || liderLower === 'sin lider');
+
+            if (!esSinLider && !regexLetras.test(lider)) {
+                return mostrarViñeta("El nombre del líder solo debe contener letras.", "error");
+            }
+
+            // 4. Si es "sin líder", el celular es obligatorio y debe ser puramente numérico
+            if (esSinLider) {
+                if (!celular) {
+                    return mostrarViñeta("Ingresá tu número de celular para asignarte un líder.", "error");
+                }
+                if (!/^[0-9]+$/.test(celular)) {
+                    return mostrarViñeta("El número de celular solo debe contener números (sin símbolos ni letras).", "error");
+                }
+            } else {
+                celular = ""; // Si tiene líder propio, no se envía celular
+            }
 
             document.getElementById('btn-alumno-registrar').innerText = "Procesando...";
             document.getElementById('btn-alumno-registrar').disabled = true;
