@@ -10,6 +10,24 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+    <style>
+        /* Estilos personalizados para la barra de scroll */
+        .custom-scroll::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #f1f5f9;
+            border-radius: 8px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 8px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
 </head>
 <body class="text-slate-800 font-sans min-h-screen flex flex-col items-center antialiased pb-10" style="background-color: #fafbfd;">
 
@@ -29,10 +47,10 @@
             <div class="flex flex-col">
                 <label class="text-xs font-semibold text-slate-500 mb-1">Seleccionar Escuela:</label>
                 <select id="al-escuela" class="p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-pink-500 focus:outline-none">
-                    <option value="ABC">Escuela ABC </option>
-                    <option value="Nivel 1">Nivel 1 </option>
-                    <option value="Nivel 2">Nivel 2 </option>
-                    <option value="Nivel 3">Nivel 3 </option>
+                    <option value="ABC">Escuela ABC</option>
+                    <option value="Nivel 1">Nivel 1</option>
+                    <option value="Nivel 2">Nivel 2</option>
+                    <option value="Nivel 3">Nivel 3</option>
                 </select>
             </div>
             
@@ -108,7 +126,7 @@
                         <button onclick="descargarPDFTotal()" class="bg-[#78281f] text-white font-bold py-2 px-3 rounded-lg text-xs shadow hover:opacity-90">🔴 PDF (Todas)</button>
                     </div>
 
-                    <!-- CONTENEDOR DINÁMICO DE LA ESCUELA SELECCIONADA -->
+                    <!-- CONTENEDOR DINÁMICO CON SCROLL PERSONALIZADO -->
                     <div id="area-impresion-pdf">
                         <div id="contenedor-escuelas" class="space-y-6"></div>
                     </div>
@@ -120,7 +138,6 @@
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyScfSWfy4MjDG2yqYRIhi4pS6BARLGU5tOBaKkSbZa_RnSIbFw-lKc94Zs_eFaatelcQ/exec";
 
-        // BASE DE DATOS DE PRUEBA SIMULADA (~650 alumnos repartidos con líderes, sin líder y faltas variadas)
         let alumnos = [];
         function generarDatosMock() {
             const escuelas = [
@@ -141,7 +158,6 @@
                     const liderAleatorio = lideres[(i + esc.nombre.length) % lideres.length];
                     const esSin = liderAleatorio.toLowerCase().includes("sin líder") || liderAleatorio.toLowerCase().includes("sin lider");
                     
-                    // Faltas variadas: algunos con 0, 1, 2, 3 y varios libres con 4 o 5
                     let faltasAleatorias = (i % 7 === 0 || i % 13 === 0) ? 4 : (i % 19 === 0 ? 5 : (i % 5));
                     
                     alumnos.push({
@@ -151,6 +167,7 @@
                         lider: liderAleatorio,
                         celular: esSin ? ("11" + Math.floor(10000000 + Math.random() * 90000000)) : "",
                         faltas: faltasAleatorias,
+                        condicionManual: null, // Si es null, se rige por las faltas automáticamente
                         estado: "Presente"
                     });
                 }
@@ -273,15 +290,12 @@
                 new QRCode(document.getElementById('al-qrcode'), { text: dni, width: 150, height: 150, colorDark: "#1a365d" });
                 document.getElementById('al-qr-label').innerText = `${nombreCompleto} (${escuela})`;
 
-                // Agregamos localmente para prueba
-                alumnos.unshift({ escuela, nombreCompleto, dni, lider, celular, faltas: 0, estado: "Presente" });
+                alumnos.unshift({ escuela, nombreCompleto, dni, lider, celular, faltas: 0, condicionManual: null, estado: "Presente" });
                 actualizarTabla();
 
                 try {
                     await enviarConReintentos({ action: "registrar", escuela, nombreCompleto, dni, lider, celular });
-                } catch(err) {
-                    // Silencioso en modo demo si no hay backend conectado aún
-                }
+                } catch(err) {}
             } catch(e) { 
                 mostrarViñeta("Registrado en el dispositivo.", "warning"); 
             }
@@ -306,7 +320,6 @@
                 return coincideEscuela && (!filtro || coincideBusqueda);
             });
 
-            // ORDENAR: Primero por Líder, y dentro de cada líder, alfabéticamente por Nombre
             alumnosEscuela.sort((a, b) => {
                 const liderA = (a.lider || "").toLowerCase();
                 const liderB = (b.lider || "").toLowerCase();
@@ -325,16 +338,17 @@
                     <span>Escuela: ${nombreEscuela}</span>
                     <span class="text-xs bg-pink-600 px-2 py-0.5 rounded-full">${alumnosEscuela.length} alumnos</span>
                 </div>
-                <div class="overflow-x-auto">
+                <!-- CONTENEDOR CON SCROLL PERSONALIZADO Y ALTURA MÁXIMA -->
+                <div class="max-h-[500px] overflow-y-auto custom-scroll">
                     <table class="w-full text-left border-collapse text-xs">
-                        <thead>
-                            <tr class="bg-slate-50 border-b border-slate-200 font-bold uppercase text-slate-600">
-                                <th class="p-3">Alumno</th>
-                                <th class="p-3">DNI</th>
-                                <th class="p-3">Líder / Cel</th>
-                                <th class="p-3 text-center">Faltas (Control)</th>
-                                <th class="p-3">Condición</th>
-                                <th class="p-3 no-export">Acción</th>
+                        <thead class="sticky top-0 bg-slate-50 z-10 shadow-sm">
+                            <tr class="border-b border-slate-200 font-bold uppercase text-slate-600">
+                                <th class="p-3 bg-slate-50">Alumno</th>
+                                <th class="p-3 bg-slate-50">DNI</th>
+                                <th class="p-3 bg-slate-50">Líder / Cel</th>
+                                <th class="p-3 text-center bg-slate-50">Faltas (Control)</th>
+                                <th class="p-3 bg-slate-50">Condición (Manual / Auto)</th>
+                                <th class="p-3 no-export bg-slate-50">Acción</th>
                             </tr>
                         </thead>
                         <tbody class="divide-y divide-slate-100">
@@ -346,12 +360,13 @@
                 alumnosEscuela.forEach((al) => {
                     const realIdx = alumnos.findIndex(item => item.dni === al.dni);
 
+                    // Definir condición actual (prioriza el selector manual, sino calcula por faltas)
+                    let condicionFinal = al.condicionManual !== null ? al.condicionManual : (al.faltas >= 4 ? "Libre / Desaprobado" : "Aprobado");
+
                     let colorFila = "hover:bg-slate-50";
-                    let condicionTexto = "Aprobado";
-                    if (al.faltas >= 4) {
-                        condicionTexto = "Libre / Desaprobado";
+                    if (condicionFinal === "Libre / Desaprobado") {
                         colorFila = "bg-red-50 hover:bg-red-100 border-l-4 border-red-500 text-red-950";
-                    } else if (al.faltas === 3) {
+                    } else if (al.faltas === 3 && al.condicionManual === null) {
                         colorFila = "bg-amber-50 hover:bg-amber-100 border-l-4 border-amber-500";
                     }
 
@@ -367,7 +382,12 @@
                                     <button onclick="cambiarFaltas(${realIdx}, 1)" class="w-5 h-5 bg-white rounded shadow-sm text-slate-700 font-bold hover:bg-emerald-100 hover:text-emerald-600 flex items-center justify-center">+</button>
                                 </div>
                             </td>
-                            <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${condicionTexto==='Aprobado'?'bg-emerald-100 text-emerald-800':'bg-red-600 text-white'}">${condicionTexto}</span></td>
+                            <td class="p-3">
+                                <select onchange="cambiarCondicionManual(${realIdx}, this.value)" class="p-1.5 border rounded text-xs font-bold uppercase bg-white shadow-sm ${condicionFinal==='Aprobado'?'text-emerald-700 border-emerald-300':'text-red-700 border-red-300'}">
+                                    <option value="Aprobado" ${condicionFinal==='Aprobado'?'selected':''}>Aprobado</option>
+                                    <option value="Libre / Desaprobado" ${condicionFinal==='Libre / Desaprobado'?'selected':''}>Libre / Desaprobado</option>
+                                </select>
+                            </td>
                             <td class="p-3 no-export">
                                 <select onchange="modificarEstado(${realIdx}, this.value)" class="p-1 border rounded text-xs bg-white">
                                     <option value="Presente" ${al.estado==='Presente'?'selected':''}>Presente</option>
@@ -389,7 +409,13 @@
         function cambiarFaltas(idx, cantidad) {
             alumnos[idx].faltas = Math.max(0, alumnos[idx].faltas + cantidad);
             actualizarTabla();
-            mostrarViñeta("Faltas actualizadas localmente", "success");
+            mostrarViñeta("Faltas actualizadas", "success");
+        }
+
+        function cambiarCondicionManual(idx, nuevaCondicion) {
+            alumnos[idx].condicionManual = nuevaCondicion;
+            actualizarTabla();
+            mostrarViñeta(`Condición cambiada a: ${nuevaCondicion}`, "success");
         }
 
         function modificarEstado(idx, nuevoEstado) {
@@ -419,7 +445,17 @@
         function descargarExcelActual() {
             const filtrados = alumnos.filter(al => al.escuela.trim().toLowerCase() === escuelaSeleccionada.toLowerCase());
             const ordenados = obtenerDatosOrdenados(filtrados);
-            const s = XLSX.utils.json_to_sheet(ordenados); 
+            const datosExportar = ordenados.map(a => ({
+                Escuela: a.escuela,
+                Alumno: a.nombreCompleto,
+                DNI: a.dni,
+                Lider: a.lider,
+                Celular: a.celular,
+                Faltas: a.faltas,
+                Condicion: a.condicionManual !== null ? a.condicionManual : (a.faltas >= 4 ? "Libre / Desaprobado" : "Aprobado"),
+                Estado: a.estado
+            }));
+            const s = XLSX.utils.json_to_sheet(datosExportar); 
             const b = XLSX.utils.book_new(); 
             XLSX.utils.book_append_sheet(b, s, escuelaSeleccionada); 
             XLSX.writeFile(b, `Reporte_${escuelaSeleccionada.replace(/\s+/g, '_')}.xlsx`);
@@ -427,7 +463,17 @@
 
         function descargarExcelTotal() {
             const ordenados = obtenerDatosOrdenados(alumnos);
-            const s = XLSX.utils.json_to_sheet(ordenados); 
+            const datosExportar = ordenados.map(a => ({
+                Escuela: a.escuela,
+                Alumno: a.nombreCompleto,
+                DNI: a.dni,
+                Lider: a.lider,
+                Celular: a.celular,
+                Faltas: a.faltas,
+                Condicion: a.condicionManual !== null ? a.condicionManual : (a.faltas >= 4 ? "Libre / Desaprobado" : "Aprobado"),
+                Estado: a.estado
+            }));
+            const s = XLSX.utils.json_to_sheet(datosExportar); 
             const b = XLSX.utils.book_new(); 
             XLSX.utils.book_append_sheet(b, s, "Todas_Las_Escuelas"); 
             XLSX.writeFile(b, "Reporte_General_Todas_Escuelas.xlsx");
@@ -478,14 +524,14 @@
                     htmlTabla += `<tr><td colspan="5" class="p-4 text-center text-slate-400 italic">No hay alumnos registrados en esta sección.</td></tr>`;
                 } else {
                     ordenados.forEach(al => {
-                        let condicionTexto = al.faltas >= 4 ? "Libre / Desaprobado" : "Aprobado";
+                        let condicionFinal = al.condicionManual !== null ? al.condicionManual : (al.faltas >= 4 ? "Libre / Desaprobado" : "Aprobado");
                         htmlTabla += `
                             <tr class="border-b border-slate-100">
                                 <td class="p-3 font-semibold">${al.nombreCompleto.toUpperCase()}</td>
                                 <td class="p-3 text-slate-500 font-mono">${al.dni}</td>
                                 <td class="p-3">${al.lider} ${al.celular ? '(Cel: ' + al.celular + ')' : ''}</td>
                                 <td class="p-3 text-center font-bold">${al.faltas}</td>
-                                <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${condicionTexto==='Aprobado'?'bg-emerald-100 text-emerald-800':'bg-red-600 text-white'}">${condicionTexto}</span></td>
+                                <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${condicionFinal==='Aprobado'?'bg-emerald-100 text-emerald-800':'bg-red-600 text-white'}">${condicionFinal}</span></td>
                             </tr>
                         `;
                     });
@@ -508,8 +554,9 @@
             scan.render(async (dniLeido) => {
                 let al = alumnos.find(a => a.dni === dniLeido.trim());
                 if (al) {
-                    if (al.faltas >= 4) {
-                        mostrarViñeta("❌ Alumno Libre / Desaprobado por exceso de faltas.", "error"); return; 
+                    let condicionActual = al.condicionManual !== null ? al.condicionManual : (al.faltas >= 4 ? "Libre / Desaprobado" : "Aprobado");
+                    if (condicionActual === "Libre / Desaprobado") {
+                        mostrarViñeta("❌ Alumno Libre / Desaprobado.", "error"); return; 
                     }
                     mostrarViñeta(`✅ Presente registrado: ${al.nombreCompleto}`, "success");
                     al.estado = "Presente";
