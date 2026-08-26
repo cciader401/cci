@@ -26,7 +26,6 @@
         .custom-scroll::-webkit-scrollbar-thumb:hover {
             background: #94a3b8;
         }
-        /* Imagen de fondo general con opacidad sutil */
         body::before {
             content: "";
             position: fixed;
@@ -48,7 +47,6 @@
 
     <div id="notification-container" class="fixed top-5 right-5 z-50 flex flex-col gap-3.5"></div>
 
-    <!-- Banner superior con imagen de fondo y degradado -->
     <div class="w-full max-w-5xl py-12 px-4 rounded-b-2xl shadow-lg border-b-4 border-pink-600 text-center relative overflow-hidden mb-6 text-white"
          style="background-image: linear-gradient(rgba(26, 54, 93, 0.85), rgba(26, 54, 93, 0.85)), url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSSPFDgrwRHjbVD_Nl2JOmBWqz6hX457GV0IMJ6j2isnXOXOOO2EMhH0W0&s=10'); background-size: 100% 100%; background-repeat: no-repeat; background-position: center;">
         <h1 class="m-0 text-3xl md:text-4xl font-extrabold uppercase tracking-wider drop-shadow-sm">Control de Asistencias</h1>
@@ -106,7 +104,6 @@
 
     <!-- VISTA ADMINISTRADOR -->
     <div id="vista-admin" class="hidden w-[95%] max-w-5xl flex-col items-center">
-        <!-- TARJETAS DE ESTADÍSTICAS EN VIVO -->
         <div class="w-full grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
             <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
                 <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Total Escuela</span>
@@ -137,7 +134,6 @@
                 <div class="w-full bg-white">
                     <h2 class="text-lg font-bold text-slate-800 mb-1">Planilla en Tiempo Real</h2>
                     
-                    <!-- SELECTOR DE ESCUELAS -->
                     <div class="my-4 no-export">
                         <label class="text-xs font-bold text-slate-500 uppercase block mb-2">Seleccionar Escuela a Visualizar:</label>
                         <div id="botones-selector-escuela" class="grid grid-cols-2 sm:grid-cols-4 gap-2">
@@ -152,7 +148,6 @@
                         <input type="text" id="buscador-alumnos" placeholder="🔍 Buscar por Nombre, DNI o Líder..." class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:border-pink-500 focus:outline-none shadow-inner">
                     </div>
 
-                    <!-- BOTONES DE DESCARGA -->
                     <div class="flex flex-wrap gap-2 my-4 no-export">
                         <button onclick="descargarExcelActual()" class="bg-[#1f7244] text-white font-bold py-2 px-3 rounded-lg text-xs shadow hover:opacity-90">🟢 Excel (Escuela Activa)</button>
                         <button onclick="descargarExcelTotal()" class="bg-[#145a32] text-white font-bold py-2 px-3 rounded-lg text-xs shadow hover:opacity-90">🟢 Excel (Todas)</button>
@@ -160,7 +155,6 @@
                         <button onclick="descargarPDFTotal()" class="bg-[#78281f] text-white font-bold py-2 px-3 rounded-lg text-xs shadow hover:opacity-90">🔴 PDF (Todas)</button>
                     </div>
 
-                    <!-- CONTENEDOR DINÁMICO CON SCROLL PERSONALIZADO -->
                     <div id="area-impresion-pdf">
                         <div id="contenedor-escuelas" class="space-y-6"></div>
                     </div>
@@ -197,7 +191,7 @@
         }
 
         function cargarDatosIniciales() {
-            const guardados = localStorage.getItem('alumnos_sistema_asistencia');
+            const guardados = localStorage.getItem('alumnos_sistema_asistencia_v2');
             if (guardados) {
                 try {
                     alumnos = JSON.parse(guardados);
@@ -206,23 +200,38 @@
             }
             
             const escuelas = [
-                { nombre: "ABC", cantidad: 103 },
-                { nombre: "Nivel 1", cantidad: 214 },
-                { nombre: "Nivel 2", cantidad: 185 },
-                { nombre: "Nivel 3", cantidad: 152 }
+                { nombre: "ABC", cantidad: 45 },
+                { nombre: "Nivel 1", cantidad: 50 },
+                { nombre: "Nivel 2", cantidad: 40 },
+                { nombre: "Nivel 3", cantidad: 35 }
             ];
-            const lideres = ["Carlos Gómez", "Mariana López", "Esteban Quito", "Romina Belloso", "Sin líder"];
-            const nombresBase = ["Agustín", "Beatriz", "Carlos", "Daniela", "Esteban", "Florencia", "Gabriel", "Hernán", "Ignacio", "Julieta", "Karina", "Lucas", "Mariano", "Natalia", "Oscar", "Pamela", "Ramiro", "Sabrina", "Tomás", "Valeria"];
-            const apellidosBase = ["Álvarez", "Benítez", "Castro", "Díaz", "Fernández", "Giménez", "Juárez", "Ledesma", "Martínez", "Núñez", "Pérez", "Rodríguez", "Sosa", "Torres", "Vargas"];
 
-            let contadorDNI = 35000000;
+            const lideres = [
+                "Marcos Silva", "Valeria Ríos", "Federico Peralta", "Camila Benítez", 
+                "Gonzalo Medina", "Lucía Gamarra", "Ezequiel Duarte", "Sofía Navarro", "Sin líder"
+            ];
+
+            const nombresBase = [
+                "Axel", "Brenda", "Cristian", "Delfina", "Enzo", "Francina", "Gael", "Hannah", "Ian", "Jazmín", 
+                "Kevin", "Lara", "Mateo", "Noelia", "Oriel", "Pilar", "Renzo", "Selena", "Thiago", "Úrsula", 
+                "Vicente", "Yamila", "Zacarías", "Abigail", "Bruno", "Catalina", "Dante", "Emilia", "Facundo", "Gimena"
+            ];
+
+            const apellidosBase = [
+                "Acosta", "Barrios", "Cabral", "Domínguez", "Escobar", "Flores", "Godoy", "Herrera", "Ibarra", "Jara", 
+                "Luna", "Maldonado", "Nieto", "Ocampo", "Pacheco", "Quevedo", "Roldán", "Salinas", "Tejada", "Vera"
+            ];
+
+            let contadorDNI = 41000000;
             escuelas.forEach(esc => {
                 for (let i = 1; i <= esc.cantidad; i++) {
                     contadorDNI++;
-                    const nombreAleatorio = nombresBase[i % nombresBase.length] + " " + apellidosBase[(i * 3) % apellidosBase.length];
+                    const nombreAleatorio = nombresBase[(i * 7) % nombresBase.length] + " " + apellidosBase[(i * 3) % apellidosBase.length];
                     const liderAleatorio = lideres[(i + esc.nombre.length) % lideres.length];
                     const esSin = liderAleatorio.toLowerCase().includes("sin líder");
-                    let faltasAleatorias = (i % 7 === 0 || i % 13 === 0) ? 4 : (i % 5);
+                    
+                    // Variedad demo de faltas (0, 1, 2, 3, 4, 5)
+                    let faltasAleatorias = i % 6; 
                     
                     alumnos.push({
                         escuela: esc.nombre,
@@ -240,7 +249,7 @@
         }
 
         function guardarEnStorage() {
-            localStorage.setItem('alumnos_sistema_asistencia', JSON.stringify(alumnos));
+            localStorage.setItem('alumnos_sistema_asistencia_v2', JSON.stringify(alumnos));
         }
 
         cargarDatosIniciales();
@@ -313,7 +322,6 @@
                 return mostrarViñeta("El DNI debe contener solo números (7 u 8 dígitos).", "error");
             }
 
-            // REGLA: Verificar si el DNI ya está inscripto en cualquier escuela
             const dniExistente = alumnos.find(a => a.dni === dni);
             if (dniExistente) {
                 reproducirSonido('error');
@@ -475,7 +483,14 @@
             contenedor.appendChild(divEscuela);
         }
 
-        document.getElementById('buscador-alumnos').addEventListener('input', actualizarTabla);
+        // BÚSQUEDA Y OCULTAMIENTO DE TECLADO AL PRESIONAR ENTER
+        const inputBuscador = document.getElementById('buscador-alumnos');
+        inputBuscador.addEventListener('input', actualizarTabla);
+        inputBuscador.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                inputBuscador.blur(); // Oculta el teclado virtual del celular
+            }
+        });
 
         function cambiarFaltas(idx, cantidad) {
             alumnos[idx].faltas = Math.max(0, alumnos[idx].faltas + cantidad);
