@@ -102,7 +102,7 @@
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzD97JFnVZ-ynpEpMAn9MIsNooIFcGvS_mpQdgtEBrBS-UNrmyf7juZ5K3WVZy9Iv1rRA/exec";
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyScfSWfy4MjDG2yqYRIhi4pS6BARLGU5tOBaKkSbZa_RnSIbFw-lKc94Zs_eFaatelcQ/exec";
 
         let alumnos = [];
         const urlParams = new URLSearchParams(window.location.search);
@@ -249,10 +249,8 @@
                 if (alumnosEscuela.length === 0) {
                     htmlTabla += `<tr><td colspan="6" class="p-4 text-center text-slate-400 italic">No hay alumnos registrados en esta sección.</td></tr>`;
                 } else {
-                    alumnos.forEach((al, realIdx) => {
-                        if (al.escuela.trim().toLowerCase() !== nombreEscuela.toLowerCase()) return;
-                        const coincideBusqueda = al.nombreCompleto.toLowerCase().includes(filtro) || al.dni.toString().includes(filtro) || al.lider.toLowerCase().includes(filtro);
-                        if (filtro && !coincideBusqueda) return;
+                    alumnosEscuela.forEach((al) => {
+                        const realIdx = alumnos.findIndex(item => item.dni === al.dni);
 
                         let colorFila = "hover:bg-slate-50";
                         let condicionTexto = "Aprobado";
