@@ -85,6 +85,18 @@
                 <div id="area-impresion-pdf" class="w-full bg-white">
                     <h2 class="text-lg font-bold text-slate-800 mb-1">Planilla en Tiempo Real</h2>
                     
+                    <!-- SELECTOR DE ESCUELAS -->
+                    <div class="my-4 no-export">
+                        <label class="text-xs font-bold text-slate-500 uppercase block mb-2">Seleccionar Escuela a Visualizar:</label>
+                        <div id="botones-selector-escuela" class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            <!-- Se generan por código o botones directos -->
+                            <button onclick="cambiarEscuelaActiva('ABC')" id="btn-escuela-ABC" class="py-2 px-3 rounded-xl text-xs font-bold transition-all bg-slate-900 text-white shadow">Escuela ABC</button>
+                            <button onclick="cambiarEscuelaActiva('Nivel 1')" id="btn-escuela-Nivel 1" class="py-2 px-3 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">Nivel 1</button>
+                            <button onclick="cambiarEscuelaActiva('Nivel 2')" id="btn-escuela-Nivel 2" class="py-2 px-3 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">Nivel 2</button>
+                            <button onclick="cambiarEscuelaActiva('Nivel 3')" id="btn-escuela-Nivel 3" class="py-2 px-3 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">Nivel 3</button>
+                        </div>
+                    </div>
+
                     <div class="my-3 no-export">
                         <input type="text" id="buscador-alumnos" placeholder="🔍 Buscar por Nombre, DNI o Líder..." class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:border-pink-500 focus:outline-none shadow-inner">
                     </div>
@@ -94,7 +106,7 @@
                         <button class="bg-[#c0392b] text-white font-bold py-2 px-3 rounded-lg text-xs" id="btn-pdf">🔴 Reporte PDF</button>
                     </div>
 
-                    <!-- CONTENEDOR DINÁMICO SEPARADO POR ESCUELAS -->
+                    <!-- CONTENEDOR DINÁMICO DE LA ESCUELA SELECCIONADA -->
                     <div id="contenedor-escuelas" class="space-y-6"></div>
                 </div>
             </div>
@@ -105,6 +117,8 @@
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyScfSWfy4MjDG2yqYRIhi4pS6BARLGU5tOBaKkSbZa_RnSIbFw-lKc94Zs_eFaatelcQ/exec";
 
         let alumnos = [];
+        let escuelaSeleccionada = "ABC"; // Escuela activa por defecto
+        
         const urlParams = new URLSearchParams(window.location.search);
         const esAdmin = urlParams.get('admin') === 'true';
 
@@ -128,6 +142,25 @@
             vineta.innerHTML = `<span>${mensaje}</span><strong class="ml-3 cursor-pointer opacity-70" onclick="this.parentElement.remove()">×</strong>`;
             document.getElementById('notification-container').appendChild(vineta);
             setTimeout(() => vineta.remove(), 4000);
+        }
+
+        function cambiarEscuelaActiva(nombreEscuela) {
+            escuelaSeleccionada = nombreEscuela;
+            
+            // Actualizar estilos de los botones del selector
+            const escuelas = ["ABC", "Nivel 1", "Nivel 2", "Nivel 3"];
+            escuelas.forEach(esc => {
+                const btn = document.getElementById(`btn-escuela-${esc}`);
+                if (btn) {
+                    if (esc === nombreEscuela) {
+                        btn.className = "py-2 px-3 rounded-xl text-xs font-bold transition-all bg-slate-900 text-white shadow";
+                    } else {
+                        btn.className = "py-2 px-3 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-slate-200";
+                    }
+                }
+            });
+
+            actualizarTabla();
         }
 
         if (esAdmin) {
@@ -212,83 +245,79 @@
             contenedor.innerHTML = "";
             const filtro = document.getElementById('buscador-alumnos').value.toLowerCase().trim();
 
-            const escuelasDisponibles = ["ABC", "Nivel 1", "Nivel 2", "Nivel 3"];
-
-            escuelasDisponibles.forEach(nombreEscuela => {
-                const alumnosEscuela = alumnos.filter(al => {
-                    const coincideEscuela = al.escuela.trim().toLowerCase() === nombreEscuela.toLowerCase();
-                    const coincideBusqueda = al.nombreCompleto.toLowerCase().includes(filtro) || al.dni.toString().includes(filtro) || al.lider.toLowerCase().includes(filtro);
-                    return coincideEscuela && (!filtro || coincideBusqueda);
-                });
-
-                if (filtro && alumnosEscuela.length === 0) return;
-
-                const divEscuela = document.createElement('div');
-                divEscuela.className = "bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm mb-4";
-                
-                let htmlTabla = `
-                    <div class="bg-slate-900 text-white px-4 py-2.5 font-bold text-sm uppercase tracking-wider flex justify-between items-center">
-                        <span>Escuela: ${nombreEscuela}</span>
-                        <span class="text-xs bg-pink-600 px-2 py-0.5 rounded-full">${alumnosEscuela.length} alumnos</span>
-                    </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left border-collapse text-xs">
-                            <thead>
-                                <tr class="bg-slate-50 border-b border-slate-200 font-bold uppercase text-slate-600">
-                                    <th class="p-3">Alumno</th>
-                                    <th class="p-3">DNI</th>
-                                    <th class="p-3">Líder / Cel</th>
-                                    <th class="p-3 text-center">Faltas (Control)</th>
-                                    <th class="p-3">Condición</th>
-                                    <th class="p-3 no-export">Acción</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-100">
-                `;
-
-                if (alumnosEscuela.length === 0) {
-                    htmlTabla += `<tr><td colspan="6" class="p-4 text-center text-slate-400 italic">No hay alumnos registrados en esta sección.</td></tr>`;
-                } else {
-                    alumnosEscuela.forEach((al) => {
-                        const realIdx = alumnos.findIndex(item => item.dni === al.dni);
-
-                        let colorFila = "hover:bg-slate-50";
-                        let condicionTexto = "Aprobado";
-                        if (al.faltas >= 4) {
-                            condicionTexto = "Desaprobado";
-                            colorFila = "bg-red-50 hover:bg-red-100 border-l-4 border-red-500 text-red-950";
-                        } else if (al.faltas === 3) {
-                            colorFila = "bg-amber-50 hover:bg-amber-100 border-l-4 border-amber-500";
-                        }
-
-                        htmlTabla += `
-                            <tr class="border-b border-slate-100 ${colorFila}">
-                                <td class="p-3 font-semibold">${al.nombreCompleto.toUpperCase()}</td>
-                                <td class="p-3 text-slate-500 font-mono">${al.dni}</td>
-                                <td class="p-3">${al.lider} ${al.celular ? '<br><span class="text-[10px] text-pink-600 font-bold">Cel: ' + al.celular + '</span>' : ''}</td>
-                                <td class="p-3 text-center">
-                                    <div class="inline-flex items-center gap-1.5 bg-slate-100 px-2 py-1 rounded-lg border border-slate-200">
-                                        <button onclick="cambiarFaltas(${realIdx}, -1)" class="w-5 h-5 bg-white rounded shadow-sm text-slate-700 font-bold hover:bg-red-100 hover:text-red-600 flex items-center justify-center">-</button>
-                                        <span class="font-extrabold text-sm px-1 min-w-[18px] text-center">${al.faltas}</span>
-                                        <button onclick="cambiarFaltas(${realIdx}, 1)" class="w-5 h-5 bg-white rounded shadow-sm text-slate-700 font-bold hover:bg-emerald-100 hover:text-emerald-600 flex items-center justify-center">+</button>
-                                    </div>
-                                </td>
-                                <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${condicionTexto==='Aprobado'?'bg-emerald-100 text-emerald-800':'bg-red-600 text-white'}">${condicionTexto}</span></td>
-                                <td class="p-3 no-export">
-                                    <select onchange="modificarEstado(${realIdx}, this.value)" class="p-1 border rounded text-xs bg-white">
-                                        <option value="Presente" ${al.estado==='Presente'?'selected':''}>Presente</option>
-                                        <option value="Ausente" ${al.estado==='Ausente'?'selected':''}>Ausente</option>
-                                    </select>
-                                </td>
-                            </tr>
-                        `;
-                    });
-                }
-
-                htmlTabla += `</tbody></table></div>`;
-                divEscuela.innerHTML = htmlTabla;
-                contenedor.appendChild(divEscuela);
+            // Solo filtramos y mostramos la escuela seleccionada actualmente
+            const nombreEscuela = escuelaSeleccionada;
+            const alumnosEscuela = alumnos.filter(al => {
+                const coincideEscuela = al.escuela.trim().toLowerCase() === nombreEscuela.toLowerCase();
+                const coincideBusqueda = al.nombreCompleto.toLowerCase().includes(filtro) || al.dni.toString().includes(filtro) || al.lider.toLowerCase().includes(filtro);
+                return coincideEscuela && (!filtro || coincideBusqueda);
             });
+
+            const divEscuela = document.createElement('div');
+            divEscuela.className = "bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm mb-4";
+            
+            let htmlTabla = `
+                <div class="bg-slate-900 text-white px-4 py-2.5 font-bold text-sm uppercase tracking-wider flex justify-between items-center">
+                    <span>Escuela: ${nombreEscuela}</span>
+                    <span class="text-xs bg-pink-600 px-2 py-0.5 rounded-full">${alumnosEscuela.length} alumnos</span>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-50 border-b border-slate-200 font-bold uppercase text-slate-600">
+                                <th class="p-3">Alumno</th>
+                                <th class="p-3">DNI</th>
+                                <th class="p-3">Líder / Cel</th>
+                                <th class="p-3 text-center">Faltas (Control)</th>
+                                <th class="p-3">Condición</th>
+                                <th class="p-3 no-export">Acción</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+            `;
+
+            if (alumnosEscuela.length === 0) {
+                htmlTabla += `<tr><td colspan="6" class="p-4 text-center text-slate-400 italic">No hay alumnos registrados en esta sección.</td></tr>`;
+            } else {
+                alumnosEscuela.forEach((al) => {
+                    const realIdx = alumnos.findIndex(item => item.dni === al.dni);
+
+                    let colorFila = "hover:bg-slate-50";
+                    let condicionTexto = "Aprobado";
+                    if (al.faltas >= 4) {
+                        condicionTexto = "Desaprobado";
+                        colorFila = "bg-red-50 hover:bg-red-100 border-l-4 border-red-500 text-red-950";
+                    } else if (al.faltas === 3) {
+                        colorFila = "bg-amber-50 hover:bg-amber-100 border-l-4 border-amber-500";
+                    }
+
+                    htmlTabla += `
+                        <tr class="border-b border-slate-100 ${colorFila}">
+                            <td class="p-3 font-semibold">${al.nombreCompleto.toUpperCase()}</td>
+                            <td class="p-3 text-slate-500 font-mono">${al.dni}</td>
+                            <td class="p-3">${al.lider} ${al.celular ? '<br><span class="text-[10px] text-pink-600 font-bold">Cel: ' + al.celular + '</span>' : ''}</td>
+                            <td class="p-3 text-center">
+                                <div class="inline-flex items-center gap-1.5 bg-slate-100 px-2 py-1 rounded-lg border border-slate-200">
+                                    <button onclick="cambiarFaltas(${realIdx}, -1)" class="w-5 h-5 bg-white rounded shadow-sm text-slate-700 font-bold hover:bg-red-100 hover:text-red-600 flex items-center justify-center">-</button>
+                                    <span class="font-extrabold text-sm px-1 min-w-[18px] text-center">${al.faltas}</span>
+                                    <button onclick="cambiarFaltas(${realIdx}, 1)" class="w-5 h-5 bg-white rounded shadow-sm text-slate-700 font-bold hover:bg-emerald-100 hover:text-emerald-600 flex items-center justify-center">+</button>
+                                </div>
+                            </td>
+                            <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${condicionTexto==='Aprobado'?'bg-emerald-100 text-emerald-800':'bg-red-600 text-white'}">${condicionTexto}</span></td>
+                            <td class="p-3 no-export">
+                                <select onchange="modificarEstado(${realIdx}, this.value)" class="p-1 border rounded text-xs bg-white">
+                                    <option value="Presente" ${al.estado==='Presente'?'selected':''}>Presente</option>
+                                    <option value="Ausente" ${al.estado==='Ausente'?'selected':''}>Ausente</option>
+                                </select>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+
+            htmlTabla += `</tbody></table></div>`;
+            divEscuela.innerHTML = htmlTabla;
+            contenedor.appendChild(divEscuela);
         }
 
         document.getElementById('buscador-alumnos').addEventListener('input', actualizarTabla);
@@ -342,7 +371,7 @@
                     if (al.faltas >= 4) {
                         mostrarViñeta("Atención: Alumno desaprobado por exceso de faltas.", "error"); return; 
                     }
-                    mostrarViñeta(`Presente registrado: ${al.nombreCompleto}`, "success");
+                    mostrarVilneta(`Presente registrado: ${al.nombreCompleto}`, "success");
                     al.estado = "Presente";
                     await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "actualizar", dni: al.dni, faltas: al.faltas, estado: "Presente" }) });
                     cargarDatosDesdeSheets();
