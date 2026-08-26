@@ -69,24 +69,24 @@
             </div>
             
             <div class="flex flex-col">
-                <label class="text-xs font-semibold text-slate-500 mb-1">Nombre y Apellido (Solo letras):</label>
+                <label class="text-xs font-semibold text-slate-500 mb-1">Nombre y Apellido:</label>
                 <input type="text" id="al-nombre" required placeholder="Ej: Juan Pérez" class="p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-pink-500 focus:outline-none">
             </div>
 
             <div class="flex flex-col">
-                <label class="text-xs font-semibold text-slate-500 mb-1">DNI (Solo números):</label>
-                <input type="text" id="al-dni" required maxlength="8" placeholder="Ej: 46123456" class="p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-pink-500 focus:outline-none">
+                <label class="text-xs font-semibold text-slate-500 mb-1">Edad (Años):</label>
+                <input type="number" id="al-edad" required min="1" max="120" placeholder="Ej: 25" class="p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-pink-500 focus:outline-none">
             </div>
 
             <div class="flex flex-col">
                 <label class="text-xs font-semibold text-slate-500 mb-1">Nombre de líder:</label>
-                <input type="text" id="al-lider" placeholder="Ej: Carlos Gómez" class="p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-pink-500 focus:outline-none">
-                <span class="text-[11px] text-slate-400 mt-1 italic">Si no tenés líder escribí <b>Sin líder</b> para que se te asigne uno.</span>
+                <input type="text" id="al-lider" required placeholder="Ej: Carlos Gómez" class="p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-pink-500 focus:outline-none">
+                <span class="text-[11px] text-slate-400 mt-1 italic">Si no tenés líder escribí <b>Sin líder</b>.</span>
             </div>
 
-            <div id="box-celular" class="hidden flex-col">
-                <label class="text-xs font-semibold text-pink-600 mb-1">Número de Celular (Solo números, sin espacios ni símbolos):</label>
-                <input type="tel" id="al-celular" placeholder="Ej: 1122334455" class="p-3 bg-pink-50/50 border border-pink-200 rounded-lg text-sm focus:border-pink-500 focus:outline-none">
+            <div class="flex flex-col">
+                <label class="text-xs font-semibold text-pink-600 mb-1">Número de Celular (Obligatorio):</label>
+                <input type="tel" id="al-celular" required placeholder="Ej: 1122334455" class="p-3 bg-pink-50/50 border border-pink-200 rounded-lg text-sm focus:border-pink-500 focus:outline-none">
             </div>
 
             <button type="button" id="btn-alumno-registrar" class="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 rounded-lg text-sm uppercase tracking-wide transition-all shadow-sm">
@@ -144,15 +144,20 @@
                     </div>
 
                     <div class="my-3 no-export">
-                        <input type="text" id="buscador-alumnos" placeholder="🔍 Buscar por Nombre, DNI o Líder..." class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:border-pink-500 focus:outline-none shadow-inner">
+                        <input type="text" id="buscador-alumnos" placeholder="🔍 Buscar por Nombre, Edad o Líder..." class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:border-pink-500 focus:outline-none shadow-inner">
                     </div>
 
-                    <!-- CONTROLES DE EXPORTACIÓN EXCEL POR LÍDER -->
+                    <!-- CONTROLES DE EXPORTACIÓN EXCEL (GENERALES Y POR LÍDER) -->
                     <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 my-4 no-export space-y-3">
-                        <span class="text-xs font-bold text-slate-600 uppercase block">📊 Exportar Reportes a Excel (Por Líder):</span>
+                        <span class="text-xs font-bold text-slate-600 uppercase block">📊 Exportar Reportes a Excel:</span>
                         
+                        <!-- Botón Exportar Escuela Actual Completa -->
+                        <div class="flex items-center">
+                            <button onclick="descargarExcelEscuelaActual()" class="w-full bg-[#1b4f72] text-white font-bold py-2 px-3 rounded-lg text-xs shadow hover:opacity-90">📥 Exportar Escuela Actual Completa (Excel)</button>
+                        </div>
+
                         <!-- Opción 1: Escuela actual + Líder seleccionado -->
-                        <div class="flex flex-col sm:flex-row gap-2 items-center">
+                        <div class="flex flex-col sm:flex-row gap-2 items-center pt-2 border-t border-slate-200">
                             <select id="select-lider-activo" class="p-2 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-700 w-full sm:w-auto flex-1 focus:outline-none">
                                 <option value="">-- Seleccionar Líder (Escuela Actual) --</option>
                             </select>
@@ -202,7 +207,7 @@
         }
 
         function cargarDatosIniciales() {
-            const guardados = localStorage.getItem('alumnos_sistema_asistencia_v4');
+            const guardados = localStorage.getItem('alumnos_sistema_asistencia_v5');
             if (guardados) {
                 try {
                     alumnos = JSON.parse(guardados);
@@ -211,43 +216,41 @@
             }
             
             const escuelas = [
-                { nombre: "ABC", cantidad: 45 },
-                { nombre: "Nivel 1", cantidad: 50 },
-                { nombre: "Nivel 2", cantidad: 40 },
-                { nombre: "Nivel 3", cantidad: 35 }
+                { nombre: "ABC", cantidad: 20 },
+                { nombre: "Nivel 1", cantidad: 20 },
+                { nombre: "Nivel 2", cantidad: 20 },
+                { nombre: "Nivel 3", cantidad: 20 }
             ];
 
             const lideres = [
-                "Carlos Gómez", "Marcos Silva", "Valeria Ríos", "Federico Peralta", 
-                "Camila Benítez", "Gonzalo Medina", "Lucía Gamarra", "Sin líder"
+                "Carlos Gómez", "Marcos Silva", "Valeria Ríos", "Sin líder"
             ];
 
             const nombresBase = [
                 "Axel", "Brenda", "Cristian", "Delfina", "Enzo", "Francina", "Gael", "Hannah", "Ian", "Jazmín", 
-                "Kevin", "Lara", "Mateo", "Noelia", "Oriel", "Pilar", "Renzo", "Selena", "Thiago", "Úrsula", 
-                "Vicente", "Yamila", "Zacarías", "Abigail", "Bruno", "Catalina", "Dante", "Emilia", "Facundo", "Gimena"
+                "Kevin", "Lara", "Mateo", "Noelia", "Oriel", "Pilar", "Renzo", "Selena", "Thiago", "Úrsula"
             ];
 
             const apellidosBase = [
-                "Acosta", "Barrios", "Cabral", "Domínguez", "Escobar", "Flores", "Godoy", "Herrera", "Ibarra", "Jara", 
-                "Luna", "Maldonado", "Nieto", "Ocampo", "Pacheco", "Quevedo", "Roldán", "Salinas", "Tejada", "Vera"
+                "Acosta", "Barrios", "Cabral", "Domínguez", "Escobar", "Flores", "Godoy", "Herrera", "Ibarra", "Jara"
             ];
 
-            let contadorDNI = 41000000;
+            let idContador = 1000;
             escuelas.forEach(esc => {
                 for (let i = 1; i <= esc.cantidad; i++) {
-                    contadorDNI++;
+                    idContador++;
                     const nombreAleatorio = nombresBase[(i * 7) % nombresBase.length] + " " + apellidosBase[(i * 3) % apellidosBase.length];
                     const liderAleatorio = lideres[(i + esc.nombre.length) % lideres.length];
-                    const esSin = liderAleatorio.toLowerCase().includes("sin líder");
-                    let faltasAleatorias = i % 6; 
+                    let edadAleatoria = 18 + (i % 30);
+                    let faltasAleatorias = i % 5; 
                     
                     alumnos.push({
+                        id: idContador.toString(),
                         escuela: esc.nombre,
                         nombreCompleto: nombreAleatorio,
-                        dni: contadorDNI.toString(),
+                        edad: edadAleatoria.toString(),
                         lider: liderAleatorio,
-                        celular: esSin ? ("11" + Math.floor(10000000 + Math.random() * 90000000)) : "",
+                        celular: "11" + Math.floor(10000000 + Math.random() * 90000000),
                         faltas: faltasAleatorias,
                         condicionManual: null,
                         estado: "Ausente"
@@ -258,7 +261,7 @@
         }
 
         function guardarEnStorage() {
-            localStorage.setItem('alumnos_sistema_asistencia_v4', JSON.stringify(alumnos));
+            localStorage.setItem('alumnos_sistema_asistencia_v5', JSON.stringify(alumnos));
         }
 
         cargarDatosIniciales();
@@ -267,19 +270,6 @@
         
         const urlParams = new URLSearchParams(window.location.search);
         const esAdmin = urlParams.get('admin') === 'true';
-
-        const inputLider = document.getElementById('al-lider');
-        const boxCelular = document.getElementById('box-celular');
-
-        inputLider.addEventListener('input', () => {
-            const valor = inputLider.value.trim().toLowerCase();
-            if (valor === 'sin líder' || valor === 'sin lider') {
-                boxCelular.style.display = 'flex';
-            } else {
-                boxCelular.style.display = 'none';
-                document.getElementById('al-celular').value = '';
-            }
-        });
 
         function mostrarViñeta(mensaje, tipo = 'success') {
             const vineta = document.createElement('div');
@@ -319,44 +309,22 @@
         document.getElementById('btn-alumno-registrar').addEventListener('click', async () => {
             const escuela = document.getElementById('al-escuela').value;
             const nombreCompleto = document.getElementById('al-nombre').value.trim();
-            const dni = document.getElementById('al-dni').value.trim();
+            const edad = document.getElementById('al-edad').value.trim();
             const lider = document.getElementById('al-lider').value.trim();
-            let celular = document.getElementById('al-celular').value.trim();
+            const celular = document.getElementById('al-celular').value.trim();
 
             const regexLetras = /^[A-Za-záéíóúÁÉÍÓÚñÑ\s]+$/;
             if (!nombreCompleto || !regexLetras.test(nombreCompleto)) {
                 return mostrarViñeta("El nombre y apellido solo debe contener letras.", "error");
             }
-            if (!/^[0-9]{7,8}$/.test(dni)) {
-                return mostrarViñeta("El DNI debe contener solo números (7 u 8 dígitos).", "error");
+            if (!edad || isNaN(edad) || Number(edad) <= 0) {
+                return mostrarViñeta("Por favor, ingresá una edad válida.", "error");
             }
-
-            const dniExistente = alumnos.find(a => a.dni === dni);
-            if (dniExistente) {
-                reproducirSonido('error');
-                return mostrarViñeta(`❌ El DNI ${dni} ya se encuentra inscripto en la escuela "${dniExistente.escuela}". No podés registrarte dos veces ni en otra escuela.`, "error");
-            }
-
             if (!lider) {
                 return mostrarViñeta("Por favor, ingresá el nombre de tu líder o escribí 'sin líder'.", "error");
             }
-
-            const liderLower = lider.toLowerCase();
-            const esSinLider = (liderLower === 'sin líder' || liderLower === 'sin lider');
-
-            if (!esSinLider && !regexLetras.test(lider)) {
-                return mostrarViñeta("El nombre del líder solo debe contener letras.", "error");
-            }
-
-            if (esSinLider) {
-                if (!celular) {
-                    return mostrarViñeta("Ingresá tu número de celular para asignarte un líder.", "error");
-                }
-                if (!/^[0-9]+$/.test(celular)) {
-                    return mostrarViñeta("El número de celular solo debe contener números.", "error");
-                }
-            } else {
-                celular = ""; 
+            if (!celular || !/^[0-9]+$/.test(celular)) {
+                return mostrarViñeta("Ingresá un número de celular válido (solo números).", "error");
             }
 
             document.getElementById('btn-alumno-registrar').innerText = "Procesando...";
@@ -367,11 +335,13 @@
                 document.getElementById('form-alumno').classList.add('hidden');
                 document.getElementById('al-qr-box').classList.remove('hidden'); 
                 document.getElementById('al-qr-box').classList.add('flex');
+                
+                const idUnico = 'ID_' + Date.now().toString().slice(-6);
                 document.getElementById('al-qrcode').innerHTML = ""; 
-                new QRCode(document.getElementById('al-qrcode'), { text: dni, width: 150, height: 150, colorDark: "#1a365d" });
+                new QRCode(document.getElementById('al-qrcode'), { text: idUnico, width: 150, height: 150, colorDark: "#1a365d" });
                 document.getElementById('al-qr-label').innerText = `${nombreCompleto} (${escuela})`;
 
-                alumnos.unshift({ escuela, nombreCompleto, dni, lider, celular, faltas: 0, condicionManual: null, estado: "Ausente" });
+                alumnos.unshift({ id: idUnico, escuela, nombreCompleto, edad, lider, celular, faltas: 0, condicionManual: null, estado: "Ausente" });
                 guardarEnStorage();
                 actualizarTabla();
             } catch(e) { 
@@ -432,7 +402,7 @@
             const nombreEscuela = escuelaSeleccionada;
             let alumnosEscuela = alumnos.filter(al => {
                 const coincideEscuela = al.escuela.trim().toLowerCase() === nombreEscuela.toLowerCase();
-                const coincideBusqueda = al.nombreCompleto.toLowerCase().includes(filtro) || al.dni.toString().includes(filtro) || al.lider.toLowerCase().includes(filtro);
+                const coincideBusqueda = al.nombreCompleto.toLowerCase().includes(filtro) || al.edad.includes(filtro) || al.lider.toLowerCase().includes(filtro);
                 return coincideEscuela && (!filtro || coincideBusqueda);
             });
 
@@ -472,7 +442,7 @@
                         <thead class="sticky top-0 bg-slate-50 z-10 shadow-sm">
                             <tr class="border-b border-slate-200 font-bold uppercase text-slate-600">
                                 <th class="p-3 bg-slate-50">Alumno</th>
-                                <th class="p-3 bg-slate-50">DNI</th>
+                                <th class="p-3 bg-slate-50">Edad</th>
                                 <th class="p-3 bg-slate-50">Líder / Cel</th>
                                 <th class="p-3 text-center bg-slate-50">Faltas (Control)</th>
                                 <th class="p-3 bg-slate-50">Condición</th>
@@ -486,7 +456,7 @@
                 htmlTabla += `<tr><td colspan="6" class="p-4 text-center text-slate-400 italic">No hay alumnos registrados en esta sección.</td></tr>`;
             } else {
                 alumnosEscuela.forEach((al) => {
-                    const realIdx = alumnos.findIndex(item => item.dni === al.dni);
+                    const realIdx = alumnos.findIndex(item => item.id === al.id);
                     let condicionFinal = al.condicionManual !== null ? al.condicionManual : (al.faltas >= 4 ? "Libre / Desaprobado" : "Aprobado");
 
                     let colorFila = "hover:bg-slate-50";
@@ -496,11 +466,20 @@
                         colorFila = "bg-emerald-50/40 hover:bg-emerald-50";
                     }
 
+                    // Destacar si es sin líder (MAYÚSCULA, CURSIVA y NEGRITA)
+                    let esSinLider = al.lider.toLowerCase().includes("sin líder") || al.lider.toLowerCase().includes("sin lider");
+                    let formatoLider = esSinLider 
+                        ? `<span class="uppercase font-extrabold italic text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">SIN LÍDER</span>` 
+                        : `<span class="font-semibold text-slate-700">${al.lider}</span>`;
+
                     htmlTabla += `
                         <tr class="border-b border-slate-100 ${colorFila}">
                             <td class="p-3 font-semibold">${al.nombreCompleto.toUpperCase()}</td>
-                            <td class="p-3 text-slate-500 font-mono">${al.dni}</td>
-                            <td class="p-3">${al.lider} ${al.celular ? '<br><span class="text-[10px] text-pink-600 font-bold">Cel: ' + al.celular + '</span>' : ''}</td>
+                            <td class="p-3 text-slate-600 font-mono">${al.edad} años</td>
+                            <td class="p-3">
+                                ${formatoLider}
+                                <br><span class="text-[10px] text-pink-600 font-bold">Cel: ${al.celular}</span>
+                            </td>
                             <td class="p-3 text-center">
                                 <div class="inline-flex items-center gap-1.5 bg-slate-100 px-2 py-1 rounded-lg border border-slate-200">
                                     <button onclick="cambiarFaltas(${realIdx}, -1)" class="w-5 h-5 bg-white rounded shadow-sm text-slate-700 font-bold hover:bg-red-100 hover:text-red-600 flex items-center justify-center">-</button>
@@ -559,6 +538,27 @@
             mostrarViñeta("Estado actualizado", "success");
         }
 
+        // EXPORTACIÓN 0: Escuela actual completa
+        function descargarExcelEscuelaActual() {
+            const filtrados = alumnos.filter(al => al.escuela.trim().toLowerCase() === escuelaSeleccionada.toLowerCase());
+            const datosExportar = filtrados.map(a => ({
+                Escuela: a.escuela,
+                Lider: a.lider,
+                Alumno: a.nombreCompleto,
+                Edad: a.edad,
+                Celular: a.celular,
+                Faltas: a.faltas,
+                Condicion: a.condicionManual !== null ? a.condicionManual : (a.faltas >= 4 ? "Libre / Desaprobado" : "Aprobado"),
+                Estado: a.estado
+            }));
+
+            const s = XLSX.utils.json_to_sheet(datosExportar); 
+            const b = XLSX.utils.book_new(); 
+            XLSX.utils.book_append_sheet(b, s, "Escuela"); 
+            XLSX.writeFile(b, `Reporte_Escuela_${escuelaSeleccionada}.xlsx`);
+            mostrarViñeta("Excel de la escuela generado correctamente.", "success");
+        }
+
         // EXPORTACIÓN 1: Escuela actual + Líder seleccionado
         function descargarExcelLiderEscuelaActual() {
             const liderSeleccionado = document.getElementById('select-lider-activo').value;
@@ -575,7 +575,7 @@
                 Escuela: a.escuela,
                 Lider: a.lider,
                 Alumno: a.nombreCompleto,
-                DNI: a.dni,
+                Edad: a.edad,
                 Celular: a.celular,
                 Faltas: a.faltas,
                 Condicion: a.condicionManual !== null ? a.condicionManual : (a.faltas >= 4 ? "Libre / Desaprobado" : "Aprobado"),
@@ -602,7 +602,7 @@
                 Escuela: a.escuela,
                 Lider: a.lider,
                 Alumno: a.nombreCompleto,
-                DNI: a.dni,
+                Edad: a.edad,
                 Celular: a.celular,
                 Faltas: a.faltas,
                 Condicion: a.condicionManual !== null ? a.condicionManual : (a.faltas >= 4 ? "Libre / Desaprobado" : "Aprobado"),
@@ -621,9 +621,9 @@
             const boxScanner = document.getElementById('scanner-container-box');
             const msgScanner = document.getElementById('scanner-msg');
 
-            scan.render(async (dniLeido) => {
-                let dniLimpio = dniLeido.trim();
-                let al = alumnos.find(a => a.dni === dniLimpio);
+            scan.render(async (idLeido) => {
+                let idLimpio = idLeido.trim();
+                let al = alumnos.find(a => a.id === idLimpio);
                 
                 if (al) {
                     if (al.estado === "Presente") {
@@ -666,8 +666,8 @@
                     reproducirSonido('error');
                     boxScanner.className = "bg-red-100 rounded-2xl p-6 shadow-md border-2 border-red-500 flex flex-col md:col-span-1 transition-all duration-300";
                     msgScanner.className = "mt-3 text-center text-xs font-extrabold text-red-800";
-                    msgScanner.innerText = `❌ DNI NO ENCONTRADO: ${dniLimpio}`;
-                    mostrarViñeta("❌ DNI no encontrado en la base de datos.", "error");
+                    msgScanner.innerText = `❌ CREDENCIAL NO ENCONTRADA`;
+                    mostrarViñeta("❌ Credencial no encontrada en la base de datos.", "error");
 
                     setTimeout(() => {
                         boxScanner.className = "bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col md:col-span-1 transition-all duration-300";
