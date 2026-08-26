@@ -170,8 +170,6 @@
     </div>
 
     <script>
-        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyScfSWfy4MjDG2yqYRIhi4pS6BARLGU5tOBaKkSbZa_RnSIbFw-lKc94Zs_eFaatelcQ/exec";
-
         let alumnos = [];
 
         function reproducirSonido(tipo) {
@@ -314,6 +312,14 @@
             if (!/^[0-9]{7,8}$/.test(dni)) {
                 return mostrarViñeta("El DNI debe contener solo números (7 u 8 dígitos).", "error");
             }
+
+            // REGLA: Verificar si el DNI ya está inscripto en cualquier escuela
+            const dniExistente = alumnos.find(a => a.dni === dni);
+            if (dniExistente) {
+                reproducirSonido('error');
+                return mostrarViñeta(`❌ El DNI ${dni} ya se encuentra inscripto en la escuela "${dniExistente.escuela}". No podés registrarte dos veces ni en otra escuela.`, "error");
+            }
+
             if (!lider) {
                 return mostrarViñeta("Por favor, ingresá el nombre de tu líder o escribí 'sin líder'.", "error");
             }
