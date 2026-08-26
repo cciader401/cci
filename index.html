@@ -17,7 +17,7 @@
 
     <div class="w-full max-w-5xl py-12 px-4 rounded-b-2xl shadow-lg border-b-4 border-pink-600 text-center relative overflow-hidden mb-6 bg-slate-900 text-white">
         <h1 class="m-0 text-3xl md:text-4xl font-extrabold uppercase tracking-wider">Control de Asistencias</h1>
-        <p class="m-0 mt-2 text-slate-300 text-sm md:text-base font-medium">Sistema de Registro y Validación</p>
+        <p class="m-0 mt-2 text-slate-300 text-sm md:text-base font-medium">Sistema de Registro y Validación (Modo Demostración)</p>
     </div>
 
     <!-- VISTA INSCRIPCIÓN ALUMNO -->
@@ -72,7 +72,7 @@
     <!-- VISTA ADMINISTRADOR -->
     <div id="vista-admin" class="hidden w-[95%] max-w-5xl flex-col items-center">
         <div id="status" class="w-full bg-white border-l-4 border-pink-600 rounded-r-xl shadow-sm p-4 text-center font-bold text-sm text-slate-700 mb-6 uppercase">
-            CONECTANDO CON LA NUBE...
+            MODO DEMOSTRACIÓN CARGADO CORRECTAMENTE
         </div>
 
         <div class="w-full grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
@@ -89,10 +89,10 @@
                     <div class="my-4 no-export">
                         <label class="text-xs font-bold text-slate-500 uppercase block mb-2">Seleccionar Escuela a Visualizar:</label>
                         <div id="botones-selector-escuela" class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                            <button onclick="cambiarEscuelaActiva('ABC')" id="btn-escuela-ABC" class="py-2 px-3 rounded-xl text-xs font-bold transition-all bg-slate-900 text-white shadow">Escuela ABC</button>
-                            <button onclick="cambiarEscuelaActiva('Nivel 1')" id="btn-escuela-Nivel 1" class="py-2 px-3 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">Nivel 1</button>
-                            <button onclick="cambiarEscuelaActiva('Nivel 2')" id="btn-escuela-Nivel 2" class="py-2 px-3 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">Nivel 2</button>
-                            <button onclick="cambiarEscuelaActiva('Nivel 3')" id="btn-escuela-Nivel 3" class="py-2 px-3 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">Nivel 3</button>
+                            <button onclick="cambiarEscuelaActiva('ABC')" id="btn-escuela-ABC" class="py-2 px-3 rounded-xl text-xs font-bold transition-all bg-slate-900 text-white shadow">Escuela ABC (103)</button>
+                            <button onclick="cambiarEscuelaActiva('Nivel 1')" id="btn-escuela-Nivel 1" class="py-2 px-3 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">Nivel 1 (214)</button>
+                            <button onclick="cambiarEscuelaActiva('Nivel 2')" id="btn-escuela-Nivel 2" class="py-2 px-3 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">Nivel 2 (185)</button>
+                            <button onclick="cambiarEscuelaActiva('Nivel 3')" id="btn-escuela-Nivel 3" class="py-2 px-3 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">Nivel 3 (152)</button>
                         </div>
                     </div>
 
@@ -120,7 +120,44 @@
     <script>
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyScfSWfy4MjDG2yqYRIhi4pS6BARLGU5tOBaKkSbZa_RnSIbFw-lKc94Zs_eFaatelcQ/exec";
 
+        // BASE DE DATOS DE PRUEBA SIMULADA (~650 alumnos repartidos con líderes, sin líder y faltas variadas)
         let alumnos = [];
+        function generarDatosMock() {
+            const escuelas = [
+                { nombre: "ABC", cantidad: 103 },
+                { nombre: "Nivel 1", cantidad: 214 },
+                { nombre: "Nivel 2", cantidad: 185 },
+                { nombre: "Nivel 3", cantidad: 152 }
+            ];
+            const lideres = ["Carlos Gómez", "Mariana López", "Esteban Quito", "Romina Belloso", "Sin líder", "Sin lider"];
+            const nombresBase = ["Agustín", "Beatriz", "Carlos", "Daniela", "Esteban", "Florencia", "Gabriel", "Hernán", "Ignacio", "Julieta", "Karina", "Lucas", "Mariano", "Natalia", "Oscar", "Pamela", "Ramiro", "Sabrina", "Tomás", "Valeria"];
+            const apellidosBase = ["Álvarez", "Benítez", "Castro", "Díaz", "Fernández", "Giménez", "Juárez", "Ledesma", "Martínez", "Núñez", "Pérez", "Rodríguez", "Sosa", "Torres", "Vargas"];
+
+            let contadorDNI = 35000000;
+            escuelas.forEach(esc => {
+                for (let i = 1; i <= esc.cantidad; i++) {
+                    contadorDNI++;
+                    const nombreAleatorio = nombresBase[i % nombresBase.length] + " " + apellidosBase[(i * 3) % apellidosBase.length] + " " + i;
+                    const liderAleatorio = lideres[(i + esc.nombre.length) % lideres.length];
+                    const esSin = liderAleatorio.toLowerCase().includes("sin líder") || liderAleatorio.toLowerCase().includes("sin lider");
+                    
+                    // Faltas variadas: algunos con 0, 1, 2, 3 y varios libres con 4 o 5
+                    let faltasAleatorias = (i % 7 === 0 || i % 13 === 0) ? 4 : (i % 19 === 0 ? 5 : (i % 5));
+                    
+                    alumnos.push({
+                        escuela: esc.nombre,
+                        nombreCompleto: nombreAleatorio,
+                        dni: contadorDNI.toString(),
+                        lider: liderAleatorio,
+                        celular: esSin ? ("11" + Math.floor(10000000 + Math.random() * 90000000)) : "",
+                        faltas: faltasAleatorias,
+                        estado: "Presente"
+                    });
+                }
+            });
+        }
+        generarDatosMock();
+
         let escuelaSeleccionada = "ABC"; 
         
         const urlParams = new URLSearchParams(window.location.search);
@@ -167,11 +204,25 @@
         if (esAdmin) {
             document.getElementById('vista-admin').classList.remove('hidden');
             document.getElementById('vista-admin').classList.add('flex');
-            cargarDatosDesdeSheets();
+            actualizarTabla();
             inicializarEscaner();
         } else {
             document.getElementById('vista-alumno').classList.remove('hidden');
             document.getElementById('vista-alumno').classList.add('flex');
+        }
+
+        async function enviarConReintentos(datos, intentosRestantes = 3) {
+            try {
+                const res = await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify(datos) });
+                return await res.json();
+            } catch (error) {
+                if (intentosRestantes > 0) {
+                    await new Promise(resolve => setTimeout(resolve, 1500));
+                    return enviarConReintentos(datos, intentosRestantes - 1);
+                } else {
+                    throw error;
+                }
+            }
         }
 
         document.getElementById('btn-alumno-registrar').addEventListener('click', async () => {
@@ -204,7 +255,7 @@
                     return mostrarViñeta("Ingresá tu número de celular para asignarte un líder.", "error");
                 }
                 if (!/^[0-9]+$/.test(celular)) {
-                    return mostrarViñeta("El número de celular solo debe contener números (sin símbolos ni letras).", "error");
+                    return mostrarViñeta("El número de celular solo debe contener números.", "error");
                 }
             } else {
                 celular = ""; 
@@ -212,18 +263,28 @@
 
             document.getElementById('btn-alumno-registrar').innerText = "Procesando...";
             document.getElementById('btn-alumno-registrar').disabled = true;
+
             try {
-                const res = await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "registrar", escuela, nombreCompleto, dni, lider, celular }) });
-                const r = await res.json();
-                if (r.status === "success") {
-                    confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-                    document.getElementById('form-alumno').classList.add('hidden');
-                    document.getElementById('al-qr-box').classList.remove('hidden'); document.getElementById('al-qr-box').classList.add('flex');
-                    document.getElementById('al-qrcode').innerHTML = ""; new QRCode(document.getElementById('al-qrcode'), { text: dni, width: 150, height: 150, colorDark: "#1a365d" });
-                    document.getElementById('al-qr-label').innerText = `${nombreCompleto} (${escuela})`;
-                } else { mostrarViñeta(r.message, "error"); }
-            } catch(e) { mostrarViñeta("Error de conexión a la nube", "error"); }
-            document.getElementById('btn-alumno-registrar').innerText = "Registrarme y Crear mi QR"; document.getElementById('btn-alumno-registrar').disabled = false;
+                confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+                document.getElementById('form-alumno').classList.add('hidden');
+                document.getElementById('al-qr-box').classList.remove('hidden'); 
+                document.getElementById('al-qr-box').classList.add('flex');
+                document.getElementById('al-qrcode').innerHTML = ""; 
+                new QRCode(document.getElementById('al-qrcode'), { text: dni, width: 150, height: 150, colorDark: "#1a365d" });
+                document.getElementById('al-qr-label').innerText = `${nombreCompleto} (${escuela})`;
+
+                // Agregamos localmente para prueba
+                alumnos.unshift({ escuela, nombreCompleto, dni, lider, celular, faltas: 0, estado: "Presente" });
+                actualizarTabla();
+
+                try {
+                    await enviarConReintentos({ action: "registrar", escuela, nombreCompleto, dni, lider, celular });
+                } catch(err) {
+                    // Silencioso en modo demo si no hay backend conectado aún
+                }
+            } catch(e) { 
+                mostrarViñeta("Registrado en el dispositivo.", "warning"); 
+            }
         });
 
         document.getElementById('btn-al-descargar').addEventListener('click', () => {
@@ -232,14 +293,6 @@
                 const a = document.createElement('a'); a.download = `Credencial_${document.getElementById('al-qr-label').innerText}.png`; a.href = qrCanvas.toDataURL('image/png', 1.0); a.click();
             }
         });
-
-        async function cargarDatosDesdeSheets() {
-            try {
-                const r = await fetch(SCRIPT_URL); alumnos = await r.json();
-                actualizarTabla();
-                document.getElementById('status').innerText = "SISTEMA ONLINE: DATOS SINCRONIZADOS.";
-            } catch (e) { document.getElementById('status').innerText = "🔴 ERROR DE CONEXIÓN AL SERVIDOR."; }
-        }
 
         function actualizarTabla() {
             const contenedor = document.getElementById('contenedor-escuelas');
@@ -296,7 +349,7 @@
                     let colorFila = "hover:bg-slate-50";
                     let condicionTexto = "Aprobado";
                     if (al.faltas >= 4) {
-                        condicionTexto = "Desaprobado";
+                        condicionTexto = "Libre / Desaprobado";
                         colorFila = "bg-red-50 hover:bg-red-100 border-l-4 border-red-500 text-red-950";
                     } else if (al.faltas === 3) {
                         colorFila = "bg-amber-50 hover:bg-amber-100 border-l-4 border-amber-500";
@@ -333,34 +386,20 @@
 
         document.getElementById('buscador-alumnos').addEventListener('input', actualizarTabla);
 
-        async function cambiarFaltas(idx, cantidad) {
-            const al = alumnos[idx];
-            al.faltas = Math.max(0, al.faltas + cantidad);
-
-            try {
-                await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "actualizar", dni: al.dni, faltas: al.faltas, estado: al.estado }) });
-                mostrarViñeta("Faltas actualizadas correctamente", "success");
-            } catch(e) { 
-                mostrarViñeta("Error al guardar en la nube", "error"); 
-            }
-            cargarDatosDesdeSheets();
+        function cambiarFaltas(idx, cantidad) {
+            alumnos[idx].faltas = Math.max(0, alumnos[idx].faltas + cantidad);
+            actualizarTabla();
+            mostrarViñeta("Faltas actualizadas localmente", "success");
         }
 
-        async function modificarEstado(idx, nuevoEstado) {
-            const al = alumnos[idx];
-            al.estado = nuevoEstado;
-
-            try {
-                await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "actualizar", dni: al.dni, faltas: al.faltas, estado: nuevoEstado }) });
-                mostrarViñeta("Estado sincronizado con éxito", "success");
-            } catch(e) { mostrarViñeta("Error al guardar en la nube", "error"); }
-            cargarDatosDesdeSheets();
+        function modificarEstado(idx, nuevoEstado) {
+            alumnos[idx].estado = nuevoEstado;
+            actualizarTabla();
+            mostrarViñeta("Estado actualizado", "success");
         }
 
-        // FUNCIONES DE DESCARGA ORDENADAS (EXCEL Y PDF)
         function obtenerDatosOrdenados(listaAlumnos) {
             let copia = [...listaAlumnos];
-            // Ordenar por Escuela, luego por Líder, luego Alfabéticamente por Nombre
             copia.sort((a, b) => {
                 const escA = (a.escuela || "").toLowerCase();
                 const escB = (b.escuela || "").toLowerCase();
@@ -395,7 +434,6 @@
         }
 
         function descargarPDFActual() {
-            // Guardamos temporalmente la vista actual para renderizar todas las escuelas juntas en el PDF total o solo la actual según corresponda
             const elementoImpresion = document.getElementById('area-impresion-pdf');
             html2pdf().from(elementoImpresion).set({
                 margin: 10,
@@ -406,7 +444,6 @@
         }
 
         function descargarPDFTotal() {
-            // Generar un contenedor temporal con TODAS las escuelas ordenadas para el PDF general
             const contenedorTemporal = document.createElement('div');
             contenedorTemporal.className = "bg-white p-4 space-y-6";
             
@@ -441,7 +478,7 @@
                     htmlTabla += `<tr><td colspan="5" class="p-4 text-center text-slate-400 italic">No hay alumnos registrados en esta sección.</td></tr>`;
                 } else {
                     ordenados.forEach(al => {
-                        let condicionTexto = al.faltas >= 4 ? "Desaprobado" : "Aprobado";
+                        let condicionTexto = al.faltas >= 4 ? "Libre / Desaprobado" : "Aprobado";
                         htmlTabla += `
                             <tr class="border-b border-slate-100">
                                 <td class="p-3 font-semibold">${al.nombreCompleto.toUpperCase()}</td>
@@ -469,34 +506,16 @@
         function inicializarEscaner() {
             const scan = new Html5QrcodeScanner("reader", { fps: 12, qrbox: 200 });
             scan.render(async (dniLeido) => {
-                const ahora = new Date();
-                const diaSemana = ahora.getDay();
-                const hora = ahora.getHours();
-                const minutos = ahora.getMinutes();
-                const horaActualMinutos = hora * 60 + minutos;
-
-                const inicioMinutos = 19 * 60;
-                const finMinutos = 23 * 60;
-
-                const esDiaValido = (diaSemana === 4 || diaSemana === 5);
-                const esHorarioValido = (horaActualMinutos >= inicioMinutos && horaActualMinutos <= finMinutos);
-
-                if (!esDiaValido || !esHorarioValido) {
-                    mostrarViñeta("❌ Fuera de horario: Las clases son Jueves y Viernes de 19:00 a 23:00 hs.", "error");
-                    return;
-                }
-
                 let al = alumnos.find(a => a.dni === dniLeido.trim());
                 if (al) {
                     if (al.faltas >= 4) {
-                        mostrarViñeta("Atención: Alumno desaprobado por exceso de faltas.", "error"); return; 
+                        mostrarViñeta("❌ Alumno Libre / Desaprobado por exceso de faltas.", "error"); return; 
                     }
-                    mostrarViñeta(`Presente registrado: ${al.nombreCompleto}`, "success");
+                    mostrarViñeta(`✅ Presente registrado: ${al.nombreCompleto}`, "success");
                     al.estado = "Presente";
-                    await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "actualizar", dni: al.dni, faltas: al.faltas, estado: "Presente" }) });
-                    cargarDatosDesdeSheets();
+                    actualizarTabla();
                 } else {
-                    mostrarViñeta("DNI no registrado.", "error");
+                    mostrarViñeta("❌ DNI no encontrado en la base de datos.", "error");
                 }
             });
         }
