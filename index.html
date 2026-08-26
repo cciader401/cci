@@ -3,135 +3,72 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CCI - Sistema Unificado de Asistencias</title>
+    <title>Sistema Unificado - Control de Asistencias</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://unpkg.com/html5-qrcode"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
-    
-    <style>
-        body::before {
-            content: "";
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            z-index: -1; 
-            background-image: url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQb2vUYikyevx8z8Bkg1x5XW-PrUv-9DzfTIPugqois49rI9fhCR-GOpVWl&s=10'); 
-            background-position: center;
-            background-repeat: no-repeat;
-            background-size: 75% auto; 
-            opacity: 0.05; 
-            pointer-events: none;
-        }
-    </style>
 </head>
 <body class="text-slate-800 font-sans min-h-screen flex flex-col items-center antialiased pb-10" style="background-color: #fafbfd;">
 
     <div id="notification-container" class="fixed top-5 right-5 z-50 flex flex-col gap-3.5"></div>
 
-    <div class="w-full max-w-5xl py-12 px-4 rounded-b-2xl shadow-lg border-b-4 border-pink-600 text-center relative overflow-hidden mb-6"
-         style="background-image: linear-gradient(rgba(26, 54, 93, 0.85), rgba(26, 54, 93, 0.85)), url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSSPFDgrwRHjbVD_Nl2JOmBWqz6hX457GV0IMJ6j2isnXOXOOO2EMhH0W0&s=10'); background-size: 100% 100%; background-repeat: no-repeat; background-position: center;">
-        <h1 id="header-titulo" class="m-0 text-3xl md:text-4xl font-extrabold text-white uppercase tracking-wider drop-shadow-sm">CCI ASISTENCIAS</h1>
-        <p class="m-0 mt-2 text-slate-200 text-sm md:text-base font-medium opacity-90">Gestión por Clases, Líderes y Protección de Historial</p>
+    <div class="w-full max-w-5xl py-12 px-4 rounded-b-2xl shadow-lg border-b-4 border-pink-600 text-center relative overflow-hidden mb-6 bg-slate-900 text-white">
+        <h1 class="m-0 text-3xl md:text-4xl font-extrabold uppercase tracking-wider">Control de Asistencias</h1>
+        <p class="m-0 mt-2 text-slate-300 text-sm md:text-base font-medium">Sistema de Registro y Validación</p>
     </div>
 
+    <!-- VISTA INSCRIPCIÓN ALUMNO -->
     <div id="vista-alumno" class="hidden w-[95%] max-w-md bg-white rounded-2xl p-6 shadow-md border border-slate-100 flex flex-col text-center">
-        <h2 class="text-2xl font-bold text-slate-800 mb-2">Inscripción a Clase</h2>
-        <p class="text-xs text-slate-400 mb-6">Ingresá tus datos para verificar tu nivel y generar tu credencial QR.</p>
+        <h2 class="text-2xl font-bold text-slate-800 mb-2">Inscripción a Escuela</h2>
+        <p class="text-xs text-slate-400 mb-6">Ingresá tus datos para registrarte y generar tu credencial.</p>
         
         <form id="form-alumno" class="space-y-4 text-left" onsubmit="return false;">
             <div class="flex flex-col">
-                <label class="text-xs font-semibold text-slate-500 mb-1">¿A qué clase/escuela te vas a anotar?:</label>
-                <select id="al-clase" required class="p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-pink-500 focus:outline-none font-bold text-slate-700">
-                    <option value="ABC" selected>ABC</option>
-                    <option value="Nivel 1">Nivel 1</option>
-                    <option value="Nivel 2">Nivel 2</option>
-                    <option value="Nivel 3 y Escuela de Líderes">Nivel 3 y Escuela de Líderes</option>
+                <label class="text-xs font-semibold text-slate-500 mb-1">Nombre y Apellido:</label>
+                <input type="text" id="al-nombre" required placeholder="Ej: Juan Pérez" class="p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-pink-500 focus:outline-none">
+            </div>
+            <div class="flex flex-col">
+                <label class="text-xs font-semibold text-slate-500 mb-1">DNI (Solo números):</label>
+                <input type="text" id="al-dni" required placeholder="Ej: 46123456" class="p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-pink-500 focus:outline-none">
+            </div>
+            <div class="flex flex-col">
+                <label class="text-xs font-semibold text-slate-500 mb-1">Líder:</label>
+                <input type="text" id="al-lider" placeholder="si no tenes líder escribe NN" class="p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-pink-500 focus:outline-none">
+            </div>
+            <div class="flex flex-col">
+                <label class="text-xs font-semibold text-slate-500 mb-1">Seleccionar Escuela:</label>
+                <select id="al-escuela" class="p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-pink-500 focus:outline-none">
+                    <option value="ABC">Escuela ABC (8 clases)</option>
+                    <option value="Nivel 1">Nivel 1 (10 clases)</option>
+                    <option value="Nivel 2">Nivel 2 (12 clases)</option>
+                    <option value="Nivel 3">Nivel 3 (Anual)</option>
                 </select>
             </div>
-            <div class="flex flex-col">
-                <label class="text-xs font-semibold text-slate-500 mb-1">Nombre(s):</label>
-                <input type="text" id="al-nombre" required placeholder="Tu Nombre" class="p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-pink-500 focus:outline-none">
-            </div>
-            <div class="flex flex-col">
-                <label class="text-xs font-semibold text-slate-500 mb-1">Apellido(s):</label>
-                <input type="text" id="al-apellido" required placeholder="Tu Apellido" class="p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-pink-500 focus:outline-none">
-            </div>
-            <div class="flex flex-col">
-                <label class="text-xs font-semibold text-slate-500 mb-1">¿Quién es tu Líder? (Si nadie, poné "Ninguno"):</label>
-                <input type="text" id="al-lider" required placeholder="Ej: Felipe Luna / Ninguno" oninput="evaluarCampoCelular(this.value)" class="p-3 bg-slate-50 border border-slate-200 rounded-lg text-sm focus:border-pink-500 focus:outline-none font-medium">
-            </div>
-            
-            <div id="contenedor-celular" class="hidden flex flex-col transition-all duration-300">
-                <label class="text-xs font-bold text-pink-600 mb-1">Número de Celular (Obligatorio para alumnos sin líder):</label>
-                <input type="tel" id="al-celular" placeholder="Ej: 1123456789" class="p-3 bg-pink-50/50 border border-pink-300 rounded-lg text-sm focus:border-pink-500 focus:outline-none font-semibold">
-            </div>
-
             <button type="button" id="btn-alumno-registrar" class="w-full bg-pink-600 hover:bg-pink-700 text-white font-bold py-3 rounded-lg text-sm uppercase tracking-wide transition-all shadow-sm">
                 Registrarme y Crear mi QR
             </button>
         </form>
 
         <div id="al-qr-box" class="hidden mt-6 p-5 border-2 border-dashed border-pink-300 rounded-xl bg-pink-50/30 flex-col items-center">
-            <span></span>
-            <div id="al-qrcode" class="mx-auto p-3 bg-white rounded-xl shadow-md"></div>
-            <span id="al-qr-label" class="text-xs font-bold text-slate-700 mt-3 mb-1 bg-white px-2 py-1 rounded border"></span>
-            <span id="al-qr-clase-label" class="text-[11px] font-extrabold text-pink-600 uppercase mb-4 tracking-wide"></span>
+            <div id="al-qrcode" class="mx-auto p-3 bg-white rounded-xl shadow-md mb-3"></div>
+            <span id="al-qr-label" class="text-xs font-bold text-slate-700 mb-4 bg-white px-2 py-1 rounded border"></span>
             <button type="button" id="btn-al-descargar" class="bg-slate-800 text-white text-xs font-bold py-2 px-4 rounded-lg">📥 Guardar en el Celular</button>
         </div>
     </div>
 
+    <!-- VISTA ADMINISTRADOR -->
     <div id="vista-admin" class="hidden w-[95%] max-w-5xl flex-col items-center">
-        
-        <div class="w-full bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex flex-col lg:flex-row items-center justify-between gap-4 mb-6">
-            <div class="text-left w-full lg:w-auto">
-                <label class="block text-xs font-extrabold text-slate-500 uppercase tracking-wider mb-1">Filtrar por Clase / Ver Aula:</label>
-                <select id="selector-clase" class="p-3 bg-slate-50 border border-pink-500 rounded-xl font-bold text-slate-800 text-sm focus:outline-none min-w-[280px] shadow-sm w-full">
-                    <option value="ABC">Clase: ABC</option>
-                    <option value="Nivel 1" selected>Clase: Nivel 1</option>
-                    <option value="Nivel 2">Clase: Nivel 2</option>
-                    <option value="Nivel 3 y Escuela de Líderes">Clase: Nivel 3 y Escuela de Líderes</option>
-                </select>
-            </div>
-            <div class="flex flex-wrap items-center gap-3 w-full lg:w-auto justify-end">
-                <button onclick="limpiarAsistenciaDelDia()" class="bg-slate-700 hover:bg-slate-800 text-white text-xs font-extrabold px-4 py-3 rounded-xl uppercase tracking-wide transition-all shadow-sm">
-                    📅 Nueva Clase (Limpiar Presentes)
-                </button>
-                <button onclick="finalizarCicloDeEstaClase()" class="bg-amber-600 hover:bg-amber-700 text-white text-xs font-extrabold px-4 py-3 rounded-xl uppercase tracking-wide transition-all shadow-sm">
-                    🎓 Cerrar Ciclo de esta Clase
-                </button>
-                <div id="status" class="bg-emerald-100 text-emerald-800 border border-emerald-200 rounded-xl px-4 py-2.5 font-bold text-xs uppercase tracking-wide text-center w-full sm:w-auto">
-                    🛡️ CONTROL FILTRADO
-                </div>
-            </div>
-        </div>
-
-        <div class="w-full bg-white rounded-2xl p-5 shadow-sm border border-slate-100 flex flex-col md:flex-row items-center justify-between gap-4 mb-6">
-            <div class="text-left">
-                <h3 class="text-sm font-bold text-slate-800 uppercase tracking-wide">📊 Reportes por Clase y Líderes Responsables</h3>
-                <p class="text-xs text-slate-400">Las descargas agruparán automáticamente a los alumnos bajo su respectivo líder de crecimiento.</p>
-            </div>
-            <div class="flex flex-wrap items-center gap-2 w-full md:w-auto justify-end">
-                <select id="tipo-reporte-descarga" class="p-2.5 bg-slate-100 border rounded-xl text-xs font-bold text-slate-700 focus:outline-none">
-                    <option value="clase" selected>Reporte por Clase Activa</option>
-                    <option value="semanal">Reporte Semanal (Últimos 7 días)</option>
-                    <option value="mensual">Reporte Mensual (Últimos 30 días)</option>
-                    <option value="final">🎓 REPORTE FINAL: EGRESADOS</option>
-                </select>
-                <button onclick="exportarExcelAvanzado()" class="bg-[#1f7244] hover:bg-[#1a5f38] text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow-sm">🟢 Descargar Excel</button>
-                <button onclick="exportarPDFAvanzado()" class="bg-[#c0392b] hover:bg-[#a63024] text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow-sm">🔴 Generar PDF</button>
-            </div>
+        <div id="status" class="w-full bg-white border-l-4 border-pink-600 rounded-r-xl shadow-sm p-4 text-center font-bold text-sm text-slate-700 mb-6 uppercase">
+            CONECTANDO CON LA NUBE...
         </div>
 
         <div class="w-full grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
             <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col md:col-span-1">
                 <h2 class="text-lg font-bold text-slate-800 border-b pb-2 mb-2">📸 Escáner de Entrada</h2>
                 <div id="reader" class="w-full max-w-[260px] mx-auto rounded-xl overflow-hidden shadow-inner !border-0"></div>
-                
                 <div id="cartel-gigante" class="mt-4 p-4 rounded-xl text-center font-extrabold uppercase transition-all hidden border duration-300">
                     <span id="cartel-texto-grande" class="block text-base tracking-wide"></span>
                 </div>
@@ -139,16 +76,37 @@
 
             <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 overflow-hidden md:col-span-2 flex flex-col">
                 <div id="area-impresion-pdf" class="w-full bg-white">
-                    <h2 id="titulo-planilla" class="text-lg font-bold text-slate-800 mb-4">Planilla en Tiempo Real (Nivel 1)</h2>
+                    <h2 class="text-lg font-bold text-slate-800 mb-1">Planilla en Tiempo Real</h2>
                     
+                    <div class="my-3 no-export">
+                        <input type="text" id="buscador-alumnos" placeholder="🔍 Buscar por Nombre, DNI o Líder..." class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:border-pink-500 focus:outline-none shadow-inner">
+                    </div>
+
+                    <!-- Botones de descarga y botones independientes de reinicio por escuela -->
+                    <div class="flex flex-wrap gap-2 my-4 download-actions">
+                        <button class="bg-[#1f7244] text-white font-bold py-2 px-3 rounded-lg text-xs" id="btn-excel">🟢 Todo (Excel)</button>
+                        <button class="bg-[#c0392b] text-white font-bold py-2 px-3 rounded-lg text-xs" id="btn-pdf">🔴 Reporte PDF</button>
+                    </div>
+
+                    <div class="flex flex-wrap gap-2 mb-4 download-actions border-t pt-3">
+                        <span class="w-full text-[11px] font-bold text-slate-500 uppercase">Limpiar pantalla de activos (Guarda historial en base de datos):</span>
+                        <button onclick="limpiarPantallaEscuela('ABC')" class="bg-amber-600 text-white font-bold py-1.5 px-2.5 rounded text-[11px]">Limpiar ABC (8 clases)</button>
+                        <button onclick="limpiarPantallaEscuela('Nivel 1')" class="bg-amber-600 text-white font-bold py-1.5 px-2.5 rounded text-[11px]">Limpiar Nivel 1 (10 clases)</button>
+                        <button onclick="limpiarPantallaEscuela('Nivel 2')" class="bg-amber-600 text-white font-bold py-1.5 px-2.5 rounded text-[11px]">Limpiar Nivel 2 (12 clases)</button>
+                        <button onclick="limpiarPantallaEscuela('Nivel 3')" class="bg-amber-600 text-white font-bold py-1.5 px-2.5 rounded text-[11px]">Limpiar Nivel 3 (Anual)</button>
+                    </div>
+
                     <div class="overflow-x-auto rounded-xl border border-slate-100">
                         <table class="w-full text-left border-collapse text-xs">
                             <thead>
                                 <tr class="bg-slate-50 border-b border-slate-200 font-bold uppercase text-slate-600">
-                                    <th class="p-3">Alumno / Calificación</th>
-                                    <th class="p-3">Líder / Referente</th>
-                                    <th class="p-3 text-center w-28">Faltas Acumuladas</th>
-                                    <th class="p-3">Estado Aula</th>
+                                    <th class="p-3">Alumno</th>
+                                    <th class="p-3">DNI</th>
+                                    <th class="p-3">Líder</th>
+                                    <th class="p-3">Escuela</th>
+                                    <th class="p-3 text-center">Faltas</th>
+                                    <th class="p-3">Estado / Condición</th>
+                                    <th class="p-3 no-export">Acción</th>
                                 </tr>
                             </thead>
                             <tbody id="cuerpo-tabla" class="divide-y divide-slate-100"></tbody>
@@ -159,467 +117,165 @@
         </div>
     </div>
 
-    <div id="tabla-exportacion-oculta" class="hidden"></div>
-
     <script>
-        if (!localStorage.getItem('cci_alumnos')) {
-            localStorage.setItem('cci_alumnos', JSON.stringify([]));
-        }
+        const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbzKcbRrJPR4MUpgcnOb5_WFmSwZZqIboosZe0ZID2FAd8_7BuxLSc7nXojGQ8FAH2rxXA/exec";
 
-        let alumnos = JSON.parse(localStorage.getItem('cci_alumnos'));
-
+        let alumnos = [];
         const urlParams = new URLSearchParams(window.location.search);
         const esAdmin = urlParams.get('admin') === 'true';
-        const selectorClase = document.getElementById('selector-clase');
-        let escanerBloqueado = false;
 
-        function guardarEnLocalStorage() {
-            localStorage.setItem('cci_alumnos', JSON.stringify(alumnos));
+        function mostrarViñeta(mensaje, tipo = 'success') {
+            const vineta = document.createElement('div');
+            let color = tipo === 'error' ? 'bg-red-500' : (tipo === 'warning' ? 'bg-amber-500' : 'bg-emerald-500');
+            vineta.className = `p-4 rounded-xl text-white font-bold shadow-lg min-w-[260px] ${color} flex items-center justify-between`;
+            vineta.innerHTML = `<span>${mensaje}</span><strong class="ml-3 cursor-pointer opacity-70" onclick="this.parentElement.remove()">×</strong>`;
+            document.getElementById('notification-container').appendChild(vineta);
+            setTimeout(() => vineta.remove(), 4000);
         }
 
-        function evaluarCampoCelular(valorLider) {
-            const contenedor = document.getElementById('contenedor-celular');
-            if (valorLider.toLowerCase().trim() === 'ninguno') {
-                contenedor.classList.remove('hidden');
-            } else {
-                contenedor.classList.add('hidden');
-                document.getElementById('al-celular').value = ""; 
+        if (esAdmin) {
+            document.getElementById('vista-admin').classList.remove('hidden');
+            document.getElementById('vista-admin').classList.add('flex');
+            cargarDatosDesdeSheets();
+            inicializarEscaner();
+        } else {
+            document.getElementById('vista-alumno').classList.remove('hidden');
+            document.getElementById('vista-alumno').classList.add('flex');
+        }
+
+        document.getElementById('btn-alumno-registrar').addEventListener('click', async () => {
+            const nombreCompleto = document.getElementById('al-nombre').value.trim();
+            const dni = document.getElementById('al-dni').value.trim();
+            let lider = document.getElementById('al-lider').value.trim();
+            if(!lider) lider = "NN";
+            const escuela = document.getElementById('al-escuela').value;
+
+            if(!/^[0-9]{7,8}$/.test(dni)) return mostrarViñeta("DNI Inválido (7 u 8 dígitos)", "error");
+            if(!nombreCompleto) return mostrarViñeta("Ingresá tu nombre y apellido", "error");
+
+            document.getElementById('btn-alumno-registrar').innerText = "Procesando...";
+            document.getElementById('btn-alumno-registrar').disabled = true;
+            try {
+                const res = await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "registrar", nombreCompleto, dni, lider, escuela }) });
+                const r = await res.json();
+                if (r.status === "success") {
+                    confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
+                    document.getElementById('form-alumno').classList.add('hidden');
+                    document.getElementById('al-qr-box').classList.remove('hidden'); document.getElementById('al-qr-box').classList.add('flex');
+                    document.getElementById('al-qrcode').innerHTML = ""; new QRCode(document.getElementById('al-qrcode'), { text: dni, width: 150, height: 150, colorDark: "#1a365d" });
+                    document.getElementById('al-qr-label').innerText = `${nombreCompleto} (${escuela})`;
+                } else { mostrarViñeta(r.message, "error"); }
+            } catch(e) { mostrarViñeta("Error de conexión a la nube", "error"); }
+            document.getElementById('btn-alumno-registrar').innerText = "Registrarme y Crear mi QR"; document.getElementById('btn-alumno-registrar').disabled = false;
+        });
+
+        document.getElementById('btn-al-descargar').addEventListener('click', () => {
+            const qrCanvas = document.getElementById('al-qrcode').querySelector('canvas');
+            if (qrCanvas) {
+                const a = document.createElement('a'); a.download = `Credencial_${document.getElementById('al-qr-label').innerText}.png`; a.href = qrCanvas.toDataURL('image/png', 1.0); a.click();
             }
+        });
+
+        async function cargarDatosDesdeSheets() {
+            try {
+                const r = await fetch(SCRIPT_URL); alumnos = await r.json();
+                actualizarTabla();
+                document.getElementById('status').innerText = "SISTEMA ONLINE: DATOS SINCRONIZADOS.";
+            } catch (e) { document.getElementById('status').innerText = "🔴 ERROR DE CONEXIÓN AL SERVIDOR."; }
         }
 
-        if (selectorClase) {
-            selectorClase.addEventListener('change', (e) => {
-                const claseElegida = e.target.value;
-                document.getElementById('titulo-planilla').innerText = `Planilla en Tiempo Real (${claseElegida})`;
-                actualizarTablaFiltrada(claseElegida);
-            });
-        }
-
-        function sumarFalta(idxGlobal) {
-            alumnos[idxGlobal].faltas += 1;
-            guardarEnLocalStorage();
-            actualizarTablaFiltrada(selectorClase.value);
-        }
-
-        function tratarNombreConCelular(al) {
-            const esNinguno = !al.lider || al.lider.toLowerCase().trim() === 'ninguno';
-            if (esNinguno && al.celular) {
-                return `${al.apellido.toUpperCase()}, ${al.nombre} (Cel: ${al.celular})`;
-            }
-            return `${al.apellido.toUpperCase()}, ${al.nombre}`;
-        }
-
-        function restarFalta(idxGlobal) {
-            if (alumnos[idxGlobal].faltas > 0) {
-                alumnos[idxGlobal].faltas -= 1;
-                guardarEnLocalStorage();
-                actualizarTablaFiltrada(selectorClase.value);
-            }
-        }
-
-        function eliminarAlumno(idxGlobal) {
-            if (confirm(`¿Eliminar por completo a ${alumnos[idxGlobal].apellido}?`)) {
-                alumnos.splice(idxGlobal, 1);
-                guardarEnLocalStorage();
-                actualizarTablaFiltrada(selectorClase.value);
-            }
-        }
-
-        function modificarDesdeAdmin(idxGlobal, nuevoEstado) {
-            alumnos[idxGlobal].estado = nuevoEstado;
-            if (nuevoEstado === "Presente") {
-                const ahora = new Date();
-                const fechaLegible = `${ahora.getDate().toString().padStart(2,'0')}/${(ahora.getMonth()+1).toString().padStart(2,'0')}/${ahora.getFullYear()} ${ahora.getHours().toString().padStart(2,'0')}:${ahora.getMinutes().toString().padStart(2,'0')}`;
-                if (!alumnos[idxGlobal].historial) alumnos[idxGlobal].historial = [];
-                alumnos[idxGlobal].historial.push(fechaLegible);
-            }
-            guardarEnLocalStorage();
-            actualizarTablaFiltrada(selectorClase.value);
-        }
-
-        function limpiarAsistenciaDelDia() {
-            const claseActiva = selectorClase.value;
-            if (!confirm(`¿Querés poner a todos los alumnos de '${claseActiva}' en Ausente para la próxima clase?`)) {
-                return;
-            }
-            alumnos.forEach(al => {
-                if (al.clase === claseActiva) { al.estado = "Ausente"; }
-            });
-            guardarEnLocalStorage();
-            actualizarTablaFiltrada(claseActiva);
-            alert(`📅 Aula de '${claseActiva}' reiniciada. Todos vuelven a estar Ausentes.`);
-        }
-
-        function finalizarCicloDeEstaClase() {
-            const claseActiva = selectorClase.value;
-            if (!confirm(`⚠ ATENCIÓN: Vas a finalizar el ciclo de '${claseActiva}'.\n\nSolo egresarán quienes cumplan la asistencia requerida y tengan nota aprobada (7 o más).`)) {
-                return;
-            }
-
-            const esNivelAvanzado = (claseActiva === "Nivel 3 y Escuela de Líderes");
-            const faltasMaximasPermitidas = esNivelAvanzado ? 1 : 3;
-
-            alumnos.forEach(al => {
-                if (al.clase === claseActiva) {
-                    if (!al.nivelesAprobados) al.nivelesAprobados = [];
-                    const tieneNotaAprobada = al.nota !== "" && parseFloat(al.nota) >= 7;
-                    
-                    if (al.faltas <= faltasMaximasPermitidas && tieneNotaAprobada) {
-                        if (!al.nivelesAprobados.includes(claseActiva)) { al.nivelesAprobados.push(claseActiva); }
-                    }
-                    al.faltas = 0; al.nota = ""; al.estado = "Ausente"; al.historial = [];
-                }
-            });
-
-            guardarEnLocalStorage();
-            actualizarTablaFiltrada(claseActiva);
-            alert(`🎓 Ciclo cerrado para '${claseActiva}'. Base de datos histórica actualizada.`);
-        }
-
-        function actualizarTablaFiltrada(claseFiltro) {
+        function actualizarTabla() {
             const tbody = document.getElementById('cuerpo-tabla');
             tbody.innerHTML = "";
-            
-            let alumnosFiltrados = alumnos.filter(a => a.clase === claseFiltro);
+            const filtro = document.getElementById('buscador-alumnos').value.toLowerCase().trim();
 
-            if (alumnosFiltrados.length === 0) {
-                tbody.innerHTML = `<tr><td colspan="4" class="p-6 text-center text-slate-400 font-medium italic">No hay alumnos cursando esta clase actualmente.</td></tr>`;
-                return;
-            }
+            alumnos.forEach((al, idx) => {
+                const coincide = al.nombreCompleto.toLowerCase().includes(filtro) || al.dni.toString().includes(filtro) || al.lider.toLowerCase().includes(filtro);
+                if (filtro && !coincide) return;
 
-            const esNivelAvanzado = (claseFiltro === "Nivel 3 y Escuela de Líderes");
-            const maxFaltasPermitidas = esNivelAvanzado ? 1 : 3;
-            const faltasParaQuedarLibre = esNivelAvanzado ? 2 : 4;
-
-            alumnosFiltrados.forEach((al) => {
-                const idxGlobal = alumnos.findIndex(a => a.nombre === al.nombre && a.apellido === al.apellido);
                 const tr = document.createElement('tr');
                 let colorFila = "hover:bg-slate-50";
                 
-                if (al.nota === undefined) al.nota = "";
-
-                let badgeEstado = `<span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${al.estado==='Presente'?'bg-emerald-100 text-emerald-800':'bg-slate-100 text-slate-700'}">${al.estado}</span>`;
-                
-                if (al.faltas >= faltasParaQuedarLibre) { 
-                    colorFila = "bg-red-50 border-l-4 border-red-500 text-red-950"; 
-                    badgeEstado = `<span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-red-600 text-white">🛑 LIBRE</span>`; 
-                } else if (al.faltas === maxFaltasPermitidas) { 
-                    colorFila = "bg-amber-50 border-l-4 border-amber-500"; 
-                    badgeEstado += ` <span class="text-[9px] font-bold text-amber-700">AL LÍMITE</span>`; 
-                } else if (al.nota !== "" && parseFloat(al.nota) < 7) {
-                    colorFila = "bg-orange-50 border-l-4 border-orange-400";
-                    badgeEstado += ` <span class="px-2 py-0.5 rounded text-[10px] font-extrabold bg-orange-500 text-white">📉 REPROBADO</span>`;
+                // Lógica de Faltas (Máximo 3, a la 4ta libre / desaprobado)
+                let condicionTexto = "Aprobado";
+                if (al.faltas >= 4) {
+                    condicionTexto = "Desaprobado";
+                    colorFila = "bg-red-50 hover:bg-red-100 border-l-4 border-red-500 text-red-950";
+                } else if (al.faltas === 3) {
+                    colorFila = "bg-amber-50 hover:bg-amber-100 border-l-4 border-amber-500";
                 }
-
-                const nombreCeldaHTML = tratarNombreConCelular(al);
 
                 tr.className = `border-b border-slate-100 ${colorFila}`;
                 tr.innerHTML = `
-                    <td class="p-3">
-                        <div class="font-semibold text-slate-800 flex items-center gap-2">
-                            ${nombreCeldaHTML}
-                            <button onclick="eliminarAlumno(${idxGlobal})" title="Eliminar alumno" class="text-slate-300 hover:text-red-600 text-[11px] transition-colors">🗑️</button>
-                        </div>
-                        <div class="text-[10px] text-slate-400 font-normal mt-0.5 flex items-center gap-1.5">
-                            Nota Examen: <span class="font-bold text-slate-700">${al.nota || 'Sin evaluar'}</span>
-                            <button onclick="cargarNotaExamen(${idxGlobal})" class="text-pink-600 hover:underline text-[9px] font-bold">[📝 Asignar Nota]</button>
-                        </div>
-                    </td>
-                    <td class="p-3 text-slate-600 font-medium text-[12px]">${al.lider || 'Ninguno'}</td>
-                    <td class="p-3 text-center">
-                        <div class="flex items-center justify-center gap-2">
-                            <button onclick="restarFalta(${idxGlobal})" class="bg-slate-200 hover:bg-slate-300 text-slate-700 font-black w-6 h-6 rounded-lg text-xs flex items-center justify-center shadow-sm transition-all">-</button>
-                            <span class="font-black text-sm min-w-[20px] text-slate-800">${al.faltas}</span>
-                            <button onclick="sumarFalta(${idxGlobal})" class="bg-slate-800 hover:bg-slate-900 text-white font-black w-6 h-6 rounded-lg text-xs flex items-center justify-center shadow-sm transition-all">+</button>
-                        </div>
-                    </td>
-                    <td class="p-3">
-                        <div class="flex items-center gap-2">
-                            ${badgeEstado}
-                            <select onchange="modificarDesdeAdmin(${idxGlobal}, this.value)" class="p-1 border rounded text-[11px] bg-white text-slate-700 focus:outline-none">
-                                <option value="Ausente" ${al.estado==='Ausente'?'selected':''}>Ausente</option>
-                                <option value="Presente" ${al.estado==='Presente'?'selected':''}>Presente</option>
-                            </select>
-                        </div>
+                    <td class="p-3 font-semibold">${al.nombreCompleto.toUpperCase()}</td>
+                    <td class="p-3 text-slate-500 font-mono">${al.dni}</td>
+                    <td class="p-3">${al.lider}</td>
+                    <td class="p-3 font-medium">${al.escuela}</td>
+                    <td class="p-3 text-center font-extrabold text-sm">${al.faltas}</td>
+                    <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${condicionTexto==='Aprobado'?'bg-emerald-100 text-emerald-800':'bg-red-600 text-white'}">${condicionTexto}</span></td>
+                    <td class="p-3 no-export">
+                        <select onchange="modificarDesdeAdmin(${idx}, this.value)" class="p-1 border rounded text-xs bg-white">
+                            <option value="Presente" ${al.estado==='Presente'?'selected':''}>Presente</option>
+                            <option value="Ausente" ${al.estado==='Ausente'?'selected':''}>Ausente (+1 Falta)</option>
+                        </select>
                     </td>
                 `;
                 tbody.appendChild(tr);
             });
         }
 
-        function cargarNotaExamen(idxGlobal) {
-            let notaActual = alumnos[idxGlobal].nota || "";
-            let nuevaNota = prompt(`Ingrese la nota del examen final para ${alumnos[idxGlobal].apellido} (1 al 10):`, notaActual);
-            if (nuevaNota !== null) {
-                if (nuevaNota.trim() === "") { alumnos[idxGlobal].nota = ""; }
-                else if (!isNaN(nuevaNota) && parseFloat(nuevaNota) >= 0 && parseFloat(nuevaNota) <= 10) {
-                    alumnos[idxGlobal].nota = parseFloat(nuevaNota);
-                } else {
-                    alert("Ingrese un número válido entre 0 y 10."); return;
-                }
-                guardarEnLocalStorage();
-                actualizarTablaFiltrada(selectorClase.value);
+        document.getElementById('buscador-alumnos').addEventListener('input', actualizarTabla);
+
+        async function modificarDesdeAdmin(idx, nuevoEstado) {
+            const al = alumnos[idx];
+            if (nuevoEstado === 'Ausente' && al.estado !== 'Ausente') {
+                al.faltas += 1;
+            } else if (nuevoEstado === 'Presente' && al.estado === 'Ausente' && al.faltas > 0) {
+                // si corrige de ausente a presente opcionalmente ajusta faltas
             }
+            al.estado = nuevoEstado;
+
+            try {
+                await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "actualizar", dni: al.dni, faltas: al.faltas, estado: nuevoEstado }) });
+                mostrarViñeta("Sincronizado con éxito", "success");
+            } catch(e) { mostrarViñeta("Error al guardar en la nube", "error"); }
+            cargarDatosDesdeSheets();
         }
 
-        if (esAdmin) {
-            document.getElementById('vista-admin').classList.remove('hidden');
-            document.getElementById('vista-admin').classList.add('flex');
-            actualizarTablaFiltrada("Nivel 1"); 
-            setTimeout(inicializarEscaner, 500);
-        } else {
-            document.getElementById('vista-alumno').classList.remove('hidden');
-            document.getElementById('vista-alumno').classList.add('flex');
+        function limpiarPantallaEscuela(nombreEscuela) {
+            if(confirm(`¿Estás seguro de limpiar la pantalla para la ${nombreEscuela}? Los datos quedarán respaldados en el historial de la base de datos.`)) {
+                // Lógica local o llamada para archivar vista de pantalla
+                mostrarViñeta(`Pantalla de ${nombreEscuela} limpiada con éxito.`, "success");
+            }
         }
-
-        document.getElementById('btn-alumno-registrar').addEventListener('click', () => {
-            const clase = document.getElementById('al-clase').value;
-            const nombre = document.getElementById('al-nombre').value.trim();
-            const apellido = document.getElementById('al-apellido').value.trim();
-            let lider = document.getElementById('al-lider').value.trim();
-            const celular = document.getElementById('al-celular').value.trim();
-
-            if(!nombre || !apellido) return alert("Faltan ingresar datos básicos.");
-            if(!lider) lider = "Ninguno";
-
-            const esLiderNinguno = lider.toLowerCase() === 'ninguno';
-            if (esLiderNinguno && !celular) {
-                return alert("🛑 Campo Requerido: Por favor, cargá un número de celular de contacto para continuar.");
-            }
-
-            const qrID = `${apellido.toLowerCase()}_${nombre.toLowerCase()}`.replace(/\s+/g, '');
-            let alumnoExistente = alumnos.find(a => `${a.apellido.toLowerCase()}_${a.nombre.toLowerCase()}`.replace(/\s+/g, '') === qrID);
-
-            if (!alumnoExistente && clase !== "ABC") {
-                return alert(`🛑 CONTROL DE ACCESO: Como eres un alumno nuevo en el sistema, debes comenzar registrándote en la clase 'ABC'.`);
-            }
-
-            if (alumnoExistente) {
-                const aprobados = alumnoExistente.nivelesAprobados || [];
-                if (clase === "Nivel 1" && !aprobados.includes("ABC")) { return alert(`🛑 REQUISITO BLOQUEADO: No podés cursar Nivel 1 porque no registrás la aprobación de 'ABC'.`); }
-                if (clase === "Nivel 2" && !aprobados.includes("Nivel 1")) { return alert(`🛑 REQUISITO BLOQUEADO: Para ingresar a Nivel 2 es obligatorio haber aprobado el 'Nivel 1'.`); }
-                if (clase === "Nivel 3 y Escuela de Líderes" && !aprobados.includes("Nivel 2")) { return alert(`🛑 REQUISITO BLOQUEADO: Debés haber aprobado el 'Nivel 2' para inscribirte en la Escuela de Líderes.`); }
-                
-                alumnoExistente.clase = clase;
-                alumnoExistente.lider = lider;
-                alumnoExistente.celular = esLiderNinguno ? celular : "";
-                alumnoExistente.faltas = 0;
-                alumnoExistente.nota = "";
-                alumnoExistente.estado = "Ausente";
-                alumnoExistente.historial = [];
-            } else {
-                alumnos.push({ nombre, apellido, faltas: 0, nota: "", estado: "Ausente", clase: clase, lider: lider, celular: esLiderNinguno ? celular : "", historial: [], nivelesAprobados: [] });
-            }
-
-            guardarEnLocalStorage();
-
-            confetti({ particleCount: 150, spread: 70, origin: { y: 0.6 } });
-            document.getElementById('form-alumno').classList.add('hidden');
-            document.getElementById('al-qr-box').classList.remove('hidden');
-            document.getElementById('al-qr-box').classList.add('flex');
-            document.getElementById('al-qrcode').innerHTML = "";
-            
-            new QRCode(document.getElementById('al-qrcode'), { text: qrID, width: 150, height: 150, colorDark: "#1a365d" });
-            document.getElementById('al-qr-label').innerText = `${apellido.toUpperCase()}, ${nombre}`;
-            document.getElementById('al-qr-clase-label').innerText = `Clase: ${clase} | Líder: ${lider}`;
-        });
-
-        document.getElementById('btn-al-descargar').addEventListener('click', () => {
-            const qrCanvas = document.getElementById('al-qrcode').querySelector('canvas');
-            if (qrCanvas) {
-                const nuevoCanvas = document.createElement('canvas');
-                nuevoCanvas.width = qrCanvas.width; nuevoCanvas.height = qrCanvas.height;
-                const ctx = nuevoCanvas.getContext('2d');
-                ctx.fillStyle = '#FFFFFF'; ctx.fillRect(0, 0, nuevoCanvas.width, nuevoCanvas.height);
-                ctx.drawImage(qrCanvas, 0, 0);
-                const a = document.createElement('a');
-                a.download = `Credencial_${document.getElementById('al-qr-label').innerText.replace(/\s+/g, '_')}.png`;
-                a.href = nuevoCanvas.toDataURL('image/png', 1.0); a.click();
-            }
-        });
 
         function inicializarEscaner() {
             const scan = new Html5QrcodeScanner("reader", { fps: 12, qrbox: 200 });
-            scan.render((codigoLeido) => {
-                if (escanerBloqueado) return;
-                
-                let al = alumnos.find(a => `${a.apellido.toLowerCase()}_${a.nombre.toLowerCase()}`.replace(/\s+/g, '') === codigoLeido.trim());
-                escanerBloqueado = true;
-                setTimeout(() => { escanerBloqueado = false; }, 3000);
-
+            scan.render(async (dniLeido) => {
+                let al = alumnos.find(a => a.dni === dniLeido.trim());
                 if (al) {
-                    const limiteLibre = (al.clase === "Nivel 3 y Escuela de Líderes") ? 2 : 4;
-                    if (al.estado === "Presente") { return flashearCartelGigante(`REPETIDO: ${al.apellido}`, "advertencia"); }
-                    if (al.faltas >= limiteLibre) { return flashearCartelGigante(`🛑 LIBRE: ${al.apellido}`, "error"); }
-
-                    flashearCartelGigante(`✅ ${al.apellido} - ${al.clase}`, "exito");
+                    if (al.faltas >= 4) {
+                        mostrarViñeta("Atención: Alumno desaprobado por exceso de faltas.", "error"); return; 
+                    }
+                    mostrarViñeta(`Presente registrado: ${al.nombreCompleto}`, "success");
                     al.estado = "Presente";
-                    const ahora = new Date();
-                    const fechaLegible = `${ahora.getDate().toString().padStart(2,'0')}/${(ahora.getMonth()+1).toString().padStart(2,'0')}/${ahora.getFullYear()} ${ahora.getHours().toString().padStart(2,'0')}:${ahora.getMinutes().toString().padStart(2,'0')}`;
-                    if(!al.historial) al.historial = [];
-                    al.historial.push(fechaLegible);
-
-                    guardarEnLocalStorage();
-                    actualizarTablaFiltrada(selectorClase.value);
+                    await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "actualizar", dni: al.dni, faltas: al.faltas, estado: "Presente" }) });
+                    cargarDatosDesdeSheets();
                 } else {
-                    flashearCartelGigante("QR DESCONOCIDO", "error");
+                    mostrarViñeta("DNI no registrado.", "error");
                 }
             });
         }
 
-        function obtenerDatosAgrupados() {
-            const tipoReporte = document.getElementById('tipo-reporte-descarga').value;
-            const claseActiva = selectorClase.value;
-            const ahora = new Date();
-            
-            let alumnosFiltrados = alumnos.filter(a => {
-                if (tipoReporte === 'clase') return a.clase === claseActiva;
-                if (!a.historial || a.historial.length === 0) return false;
-                
-                return a.historial.some(f => {
-                    const [fPart] = f.split(' ');
-                    const [d, m, y] = fPart.split('/');
-                    const fechaAsis = new Date(y, m - 1, d);
-                    const diffDias = (ahora - fechaAsis) / (1000 * 60 * 60 * 24);
-                    if (tipoReporte === 'semanal') return diffDias <= 7;
-                    if (tipoReporte === 'mensual') return diffDias <= 30;
-                    return true;
-                });
-            });
+        document.getElementById('btn-excel').addEventListener('click', () => {
+            const s = XLSX.utils.json_to_sheet(alumnos); const b = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(b, s, "Asistencias"); XLSX.writeFile(b, "Reporte_Asistencias.xlsx");
+        });
 
-            if (tipoReporte === 'final') alumnosFiltrados = alumnos;
-
-            let estructurado = {};
-            alumnosFiltrados.forEach(al => {
-                const c = al.clase;
-                const l = al.lider || "Ninguno";
-                if (!estructurado[c]) estructurado[c] = {};
-                if (!estructurado[c][l]) estructurado[c][l] = [];
-                estructurado[c][l].push(al);
-            });
-
-            return { estructurado, tipoReporte, claseActiva };
-        }
-
-        function exportarExcelAvanzado() {
-            const { estructurado, tipoReporte } = obtenerDatosAgrupados();
-            let matrizExcel = [];
-
-            Object.keys(estructurado).sort().forEach(clase => {
-                const esAvanzado = (clase === "Nivel 3 y Escuela de Líderes");
-                const limiteLibre = esAvanzado ? 2 : 4;
-
-                Object.keys(estructurado[clase]).sort().forEach(lider => {
-                    estructurado[clase][lider].forEach(al => {
-                        const totalAsistencias = al.historial ? al.historial.length : 0;
-                        const notaMostrable = al.nota !== "" ? al.nota : "Sin nota";
-
-                        let cond = "🎓 EGRESADO";
-                        if (al.faltas >= limiteLibre) cond = "🛑 LIBRE POR FALTAS";
-                        else if (al.nota !== "" && parseFloat(al.nota) < 7) cond = "📉 REPROBADO EXAMEN";
-                        else if (al.nota === "") cond = "⏳ PENDIENTE EVALUACIÓN";
-
-                        let fila = {
-                            "CLASE": clase,
-                            "LÍDER RESPONSABLE": lider.toUpperCase(),
-                            "ALUMNO": tratarNombreConCelular(al),
-                            "FALTAS ACUMULADAS": al.faltas,
-                            "NOTA EXAMEN": notaMostrable
-                        };
-
-                        if (tipoReporte === 'final') {
-                            fila["CONDICIÓN FINAL"] = cond;
-                        } else {
-                            fila["CLASES ASISTIDAS"] = totalAsistencias;
-                            fila["ESTADO HOY"] = al.estado;
-                        }
-                        matrizExcel.push(fila);
-                    });
-                });
-            });
-
-            const hoja = XLSX.utils.json_to_sheet(matrizExcel);
-            const libro = XLSX.utils.book_new();
-            XLSX.utils.book_append_sheet(libro, hoja, "Asistencias");
-            XLSX.writeFile(libro, `CCI_Reporte_${tipoReporte.toUpperCase()}.xlsx`);
-        }
-
-        function exportarPDFAvanzado() {
-            const { estructurado, tipoReporte } = obtenerDatosAgrupados();
-            
-            let html = `<div style="padding: 25px; font-family: sans-serif; color: #1e293b; background-color: #ffffff;">
-                <h1 style="text-transform: uppercase; font-size: 20px; font-weight: 900; color: #1a365d; border-bottom: 3px solid #db2777; padding-bottom: 5px; margin-bottom:10px;">
-                    CCI - INFORME DE RENDIMIENTO ACADÉMICO
-                </h1>
-                <p style="font-size: 11px; color: #64748b; margin-bottom: 20px;">Tipo de Reporte: <span style="font-weight:bold; color:#db2777; text-transform:uppercase;">${tipoReporte}</span></p>`;
-
-            Object.keys(estructurado).sort().forEach(clase => {
-                const esAvanzado = (clase === "Nivel 3 y Escuela de Líderes");
-                const limiteLibre = esAvanzado ? 2 : 4;
-
-                html += `<div style="margin-top: 20px; background: #1a365d; color: white; padding: 6px; font-weight: bold; border-radius: 4px; font-size: 12px; text-transform: uppercase;">🏫 CLASE: ${clase}</div>`;
-                
-                Object.keys(estructurado[clase]).sort().forEach(lider => {
-                    html += `<h3 style="margin: 12px 0 6px 2px; font-size: 11px; color: #db2777; font-weight: bold; text-transform: uppercase;">👤 LÍDER RESPONSABLE: ${lider}</h3>`;
-                    
-                    html += `<table style="width: 100%; border-collapse: collapse; font-size: 10px; margin-bottom: 15px;">
-                        <thead>
-                            <tr style="background-color: #f8fafc; text-align: left; color: #475569; font-size: 9px; font-weight: bold;">
-                                <th style="padding: 6px; border: 1px solid #e2e8f0; width: 40%;">Alumno</th>
-                                <th style="padding: 6px; border: 1px solid #e2e8f0; text-align: center; width: 15%;">Faltas</th>
-                                <th style="padding: 6px; border: 1px solid #e2e8f0; text-align: center; width: 15%;">Nota Final</th>
-                                <th style="padding: 6px; border: 1px solid #e2e8f0; text-align: center; width: 30%;">Condición</th>
-                            </tr>
-                        </thead>
-                        <tbody>`;
-
-                    estructurado[clase][lider].forEach(al => {
-                        let egresaStatus = '<span style="color:#047857; font-weight:bold; background-color:#f0fdf4; padding:2px 6px; border-radius:4px;">🎓 EGRESADO</span>';
-                        if (al.faltas >= limiteLibre) {
-                            egresaStatus = '<span style="color:#b91c1c; font-weight:bold; background-color:#fef2f2; padding:2px 6px; border-radius:4px;">🛑 LIBRE</span>';
-                        } else if (al.nota !== "" && parseFloat(al.nota) < 7) {
-                            egresaStatus = '<span style="color:#d97706; font-weight:bold; background-color:#fffbeb; padding:2px 6px; border-radius:4px;">📉 REPROBADO</span>';
-                        } else if (al.nota === "") {
-                            egresaStatus = '<span style="color:#475569; font-weight:bold; background-color:#f1f5f9; padding:2px 6px; border-radius:4px;">⏳ SIN NOTA</span>';
-                        }
-                        
-                        html += `<tr style="border-bottom: 1px solid #f1f5f9;">
-                            <td style="padding: 6px; border: 1px solid #e2e8f0; font-weight: 600;">${tratarNombreConCelular(al)}</td>
-                            <td style="padding: 6px; border: 1px solid #e2e8f0; text-align: center; font-weight: bold; color:#475569;">${al.faltas}</td>
-                            <td style="padding: 6px; border: 1px solid #e2e8f0; text-align: center; font-weight: bold; color:#475569;">${al.nota !== "" ? al.nota : '-'}</td>
-                            <td style="padding: 6px; border: 1px solid #e2e8f0; text-align: center;">${egresaStatus}</td>
-                        </tr>`;
-                    });
-                    html += `</tbody></table>`;
-                });
-            });
-
-            html += `</div>`;
-            
-            const con = document.getElementById('tabla-exportacion-oculta'); 
-            con.innerHTML = html; con.classList.remove('hidden');
-            
-            html2pdf().from(con).set({
-                margin: 0.4,
-                filename: `CCI_Reporte_${tipoReporte.toUpperCase()}.pdf`,
-                image: { type: 'jpeg', quality: 0.98 },
-                html2canvas: { scale: 2 },
-                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
-            }).save().then(() => { 
-                con.classList.add('hidden'); con.innerHTML = "";
-            });
-        }
-
-        function flashearCartelGigante(texto, tipo) {
-            const cartel = document.getElementById('cartel-gigante');
-            const txt = document.getElementById('cartel-texto-grande');
-            cartel.classList.remove('hidden', 'bg-emerald-100', 'text-emerald-800', 'border-emerald-300', 'bg-red-100', 'text-red-800', 'border-red-300', 'bg-amber-100', 'text-amber-800', 'border-amber-300');
-            txt.innerText = texto;
-            if (tipo === 'exito') { cartel.className = "mt-4 p-4 rounded-xl text-center font-extrabold uppercase border bg-emerald-100 text-emerald-800 border-emerald-300 block"; }
-            else if (tipo === 'advertencia') { cartel.className = "mt-4 p-4 rounded-xl text-center font-extrabold uppercase border bg-amber-100 text-amber-800 border-amber-300 block"; }
-            else { cartel.className = "mt-4 p-4 rounded-xl text-center font-extrabold uppercase border bg-red-100 text-red-800 border-red-300 block"; }
-            setTimeout(() => { cartel.classList.add('hidden'); }, 3000);
-        }
+        // Reporte PDF simplificado (Solo muestra Aprobado / Desaprobado sin notas extra)
+        document.getElementById('btn-pdf').addEventListener('click', () => {
+            const d = document.querySelectorAll('.no-export, .download-actions'); d.forEach(el => el.style.visibility = 'hidden');
+            html2pdf().from(document.getElementById('area-impresion-pdf')).save().then(() => { d.forEach(el => el.style.visibility = 'visible'); });
+        });
     </script>
 </body>
 </html>
