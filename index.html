@@ -82,14 +82,13 @@
             </div>
 
             <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 overflow-hidden md:col-span-2 flex flex-col">
-                <div id="area-impresion-pdf" class="w-full bg-white">
+                <div class="w-full bg-white">
                     <h2 class="text-lg font-bold text-slate-800 mb-1">Planilla en Tiempo Real</h2>
                     
                     <!-- SELECTOR DE ESCUELAS -->
                     <div class="my-4 no-export">
                         <label class="text-xs font-bold text-slate-500 uppercase block mb-2">Seleccionar Escuela a Visualizar:</label>
                         <div id="botones-selector-escuela" class="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                            <!-- Se generan por código o botones directos -->
                             <button onclick="cambiarEscuelaActiva('ABC')" id="btn-escuela-ABC" class="py-2 px-3 rounded-xl text-xs font-bold transition-all bg-slate-900 text-white shadow">Escuela ABC</button>
                             <button onclick="cambiarEscuelaActiva('Nivel 1')" id="btn-escuela-Nivel 1" class="py-2 px-3 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">Nivel 1</button>
                             <button onclick="cambiarEscuelaActiva('Nivel 2')" id="btn-escuela-Nivel 2" class="py-2 px-3 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">Nivel 2</button>
@@ -101,13 +100,18 @@
                         <input type="text" id="buscador-alumnos" placeholder="🔍 Buscar por Nombre, DNI o Líder..." class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:border-pink-500 focus:outline-none shadow-inner">
                     </div>
 
-                    <div class="flex flex-wrap gap-2 my-4 download-actions">
-                        <button class="bg-[#1f7244] text-white font-bold py-2 px-3 rounded-lg text-xs" id="btn-excel">🟢 Todo (Excel)</button>
-                        <button class="bg-[#c0392b] text-white font-bold py-2 px-3 rounded-lg text-xs" id="btn-pdf">🔴 Reporte PDF</button>
+                    <!-- BOTONES DE DESCARGA -->
+                    <div class="flex flex-wrap gap-2 my-4 no-export">
+                        <button onclick="descargarExcelActual()" class="bg-[#1f7244] text-white font-bold py-2 px-3 rounded-lg text-xs shadow hover:opacity-90">🟢 Excel (Escuela Activa)</button>
+                        <button onclick="descargarExcelTotal()" class="bg-[#145a32] text-white font-bold py-2 px-3 rounded-lg text-xs shadow hover:opacity-90">🟢 Excel (Todas)</button>
+                        <button onclick="descargarPDFActual()" class="bg-[#c0392b] text-white font-bold py-2 px-3 rounded-lg text-xs shadow hover:opacity-90">🔴 PDF (Escuela Activa)</button>
+                        <button onclick="descargarPDFTotal()" class="bg-[#78281f] text-white font-bold py-2 px-3 rounded-lg text-xs shadow hover:opacity-90">🔴 PDF (Todas)</button>
                     </div>
 
                     <!-- CONTENEDOR DINÁMICO DE LA ESCUELA SELECCIONADA -->
-                    <div id="contenedor-escuelas" class="space-y-6"></div>
+                    <div id="area-impresion-pdf">
+                        <div id="contenedor-escuelas" class="space-y-6"></div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -117,7 +121,7 @@
         const SCRIPT_URL = "https://script.google.com/macros/s/AKfycbyScfSWfy4MjDG2yqYRIhi4pS6BARLGU5tOBaKkSbZa_RnSIbFw-lKc94Zs_eFaatelcQ/exec";
 
         let alumnos = [];
-        let escuelaSeleccionada = "ABC"; // Escuela activa por defecto
+        let escuelaSeleccionada = "ABC"; 
         
         const urlParams = new URLSearchParams(window.location.search);
         const esAdmin = urlParams.get('admin') === 'true';
@@ -146,8 +150,6 @@
 
         function cambiarEscuelaActiva(nombreEscuela) {
             escuelaSeleccionada = nombreEscuela;
-            
-            // Actualizar estilos de los botones del selector
             const escuelas = ["ABC", "Nivel 1", "Nivel 2", "Nivel 3"];
             escuelas.forEach(esc => {
                 const btn = document.getElementById(`btn-escuela-${esc}`);
@@ -159,7 +161,6 @@
                     }
                 }
             });
-
             actualizarTabla();
         }
 
@@ -245,12 +246,22 @@
             contenedor.innerHTML = "";
             const filtro = document.getElementById('buscador-alumnos').value.toLowerCase().trim();
 
-            // Solo filtramos y mostramos la escuela seleccionada actualmente
             const nombreEscuela = escuelaSeleccionada;
-            const alumnosEscuela = alumnos.filter(al => {
+            let alumnosEscuela = alumnos.filter(al => {
                 const coincideEscuela = al.escuela.trim().toLowerCase() === nombreEscuela.toLowerCase();
                 const coincideBusqueda = al.nombreCompleto.toLowerCase().includes(filtro) || al.dni.toString().includes(filtro) || al.lider.toLowerCase().includes(filtro);
                 return coincideEscuela && (!filtro || coincideBusqueda);
+            });
+
+            // ORDENAR: Primero por Líder, y dentro de cada líder, alfabéticamente por Nombre
+            alumnosEscuela.sort((a, b) => {
+                const liderA = (a.lider || "").toLowerCase();
+                const liderB = (b.lider || "").toLowerCase();
+                if (liderA < liderB) return -1;
+                if (liderA > liderB) return 1;
+                const nombreA = (a.nombreCompleto || "").toLowerCase();
+                const nombreB = (b.nombreCompleto || "").toLowerCase();
+                return nombreA.localeCompare(nombreB);
             });
 
             const divEscuela = document.createElement('div');
@@ -346,6 +357,115 @@
             cargarDatosDesdeSheets();
         }
 
+        // FUNCIONES DE DESCARGA ORDENADAS (EXCEL Y PDF)
+        function obtenerDatosOrdenados(listaAlumnos) {
+            let copia = [...listaAlumnos];
+            // Ordenar por Escuela, luego por Líder, luego Alfabéticamente por Nombre
+            copia.sort((a, b) => {
+                const escA = (a.escuela || "").toLowerCase();
+                const escB = (b.escuela || "").toLowerCase();
+                if (escA !== escB) return escA.localeCompare(escB);
+
+                const liderA = (a.lider || "").toLowerCase();
+                const liderB = (b.lider || "").toLowerCase();
+                if (liderA !== liderB) return liderA.localeCompare(liderB);
+
+                const nombreA = (a.nombreCompleto || "").toLowerCase();
+                const nombreB = (b.nombreCompleto || "").toLowerCase();
+                return nombreA.localeCompare(nombreB);
+            });
+            return copia;
+        }
+
+        function descargarExcelActual() {
+            const filtrados = alumnos.filter(al => al.escuela.trim().toLowerCase() === escuelaSeleccionada.toLowerCase());
+            const ordenados = obtenerDatosOrdenados(filtrados);
+            const s = XLSX.utils.json_to_sheet(ordenados); 
+            const b = XLSX.utils.book_new(); 
+            XLSX.utils.book_append_sheet(b, s, escuelaSeleccionada); 
+            XLSX.writeFile(b, `Reporte_${escuelaSeleccionada.replace(/\s+/g, '_')}.xlsx`);
+        }
+
+        function descargarExcelTotal() {
+            const ordenados = obtenerDatosOrdenados(alumnos);
+            const s = XLSX.utils.json_to_sheet(ordenados); 
+            const b = XLSX.utils.book_new(); 
+            XLSX.utils.book_append_sheet(b, s, "Todas_Las_Escuelas"); 
+            XLSX.writeFile(b, "Reporte_General_Todas_Escuelas.xlsx");
+        }
+
+        function descargarPDFActual() {
+            // Guardamos temporalmente la vista actual para renderizar todas las escuelas juntas en el PDF total o solo la actual según corresponda
+            const elementoImpresion = document.getElementById('area-impresion-pdf');
+            html2pdf().from(elementoImpresion).set({
+                margin: 10,
+                filename: `Reporte_${escuelaSeleccionada.replace(/\s+/g, '_')}.pdf`,
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            }).save();
+        }
+
+        function descargarPDFTotal() {
+            // Generar un contenedor temporal con TODAS las escuelas ordenadas para el PDF general
+            const contenedorTemporal = document.createElement('div');
+            contenedorTemporal.className = "bg-white p-4 space-y-6";
+            
+            const listaEscuelas = ["ABC", "Nivel 1", "Nivel 2", "Nivel 3"];
+            listaEscuelas.forEach(nombreEscuela => {
+                let filtrados = alumnos.filter(al => al.escuela.trim().toLowerCase() === nombreEscuela.toLowerCase());
+                let ordenados = obtenerDatosOrdenados(filtrados);
+
+                let divEscuela = document.createElement('div');
+                divEscuela.className = "bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm mb-4";
+                
+                let htmlTabla = `
+                    <div class="bg-slate-900 text-white px-4 py-2.5 font-bold text-sm uppercase tracking-wider flex justify-between items-center">
+                        <span>Escuela: ${nombreEscuela}</span>
+                        <span class="text-xs bg-pink-600 px-2 py-0.5 rounded-full">${ordenados.length} alumnos</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse text-xs">
+                            <thead>
+                                <tr class="bg-slate-50 border-b border-slate-200 font-bold uppercase text-slate-600">
+                                    <th class="p-3">Alumno</th>
+                                    <th class="p-3">DNI</th>
+                                    <th class="p-3">Líder / Cel</th>
+                                    <th class="p-3 text-center">Faltas</th>
+                                    <th class="p-3">Condición</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-100">
+                `;
+
+                if (ordenados.length === 0) {
+                    htmlTabla += `<tr><td colspan="5" class="p-4 text-center text-slate-400 italic">No hay alumnos registrados en esta sección.</td></tr>`;
+                } else {
+                    ordenados.forEach(al => {
+                        let condicionTexto = al.faltas >= 4 ? "Desaprobado" : "Aprobado";
+                        htmlTabla += `
+                            <tr class="border-b border-slate-100">
+                                <td class="p-3 font-semibold">${al.nombreCompleto.toUpperCase()}</td>
+                                <td class="p-3 text-slate-500 font-mono">${al.dni}</td>
+                                <td class="p-3">${al.lider} ${al.celular ? '(Cel: ' + al.celular + ')' : ''}</td>
+                                <td class="p-3 text-center font-bold">${al.faltas}</td>
+                                <td class="p-3"><span class="px-2 py-0.5 rounded text-[10px] font-bold uppercase ${condicionTexto==='Aprobado'?'bg-emerald-100 text-emerald-800':'bg-red-600 text-white'}">${condicionTexto}</span></td>
+                            </tr>
+                        `;
+                    });
+                }
+                htmlTabla += `</tbody></table></div>`;
+                divEscuela.innerHTML = htmlTabla;
+                contenedorTemporal.appendChild(divEscuela);
+            });
+
+            html2pdf().from(contenedorTemporal).set({
+                margin: 10,
+                filename: 'Reporte_General_Todas_Escuelas.pdf',
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            }).save();
+        }
+
         function inicializarEscaner() {
             const scan = new Html5QrcodeScanner("reader", { fps: 12, qrbox: 200 });
             scan.render(async (dniLeido) => {
@@ -371,7 +491,7 @@
                     if (al.faltas >= 4) {
                         mostrarViñeta("Atención: Alumno desaprobado por exceso de faltas.", "error"); return; 
                     }
-                    mostrarVilneta(`Presente registrado: ${al.nombreCompleto}`, "success");
+                    mostrarViñeta(`Presente registrado: ${al.nombreCompleto}`, "success");
                     al.estado = "Presente";
                     await fetch(SCRIPT_URL, { method: "POST", body: JSON.stringify({ action: "actualizar", dni: al.dni, faltas: al.faltas, estado: "Presente" }) });
                     cargarDatosDesdeSheets();
@@ -380,15 +500,6 @@
                 }
             });
         }
-
-        document.getElementById('btn-excel').addEventListener('click', () => {
-            const s = XLSX.utils.json_to_sheet(alumnos); const b = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(b, s, "Asistencias"); XLSX.writeFile(b, "Reporte_Asistencias.xlsx");
-        });
-
-        document.getElementById('btn-pdf').addEventListener('click', () => {
-            const d = document.querySelectorAll('.no-export, .download-actions'); d.forEach(el => el.style.visibility = 'hidden');
-            html2pdf().from(document.getElementById('area-impresion-pdf')).save().then(() => { d.forEach(el => el.style.visibility = 'visible'); });
-        });
     </script>
 </body>
 </html>
