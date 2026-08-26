@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Panel de Administración - Control de Asistencias</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/html5-qrcode"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+    <style>
+        /* PANTALLA DE LOGIN */
+        #login-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(26, 54, 93, 0.95); display: flex; justify-content: center; align-items: center;
+            z-index: 9999;
+        }
+        .login-box {
+            background: white; padding: 30px; border-radius: 12px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.3); width: 90%; max-width: 350px; text-align: center;
+        }
+        .login-box input {
+            width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #cbd5e1; border-radius: 8px; box-sizing: border-box; font-size: 14px;
+        }
+        .login-box button {
+            width: 100%; padding: 12px; background: #db2777; color: white; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 14px; text-transform: uppercase;
+        }
+        .login-box button:hover { background: #be185d; }
+        .error-msg { color: #dc2626; font-size: 12px; margin-top: 10px; font-weight: bold; }
+        
+        .oculto { display: none !important; }
+
+        .custom-scroll::-webkit-scrollbar { width: 8px; height: 8px; }
+        .custom-scroll::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 8px; }
+        .custom-scroll::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 8px; }
+        .custom-scroll::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="text-slate-800 font-sans min-h-screen flex flex-col items-center antialiased pb-10" style="background-color: #fafbfd;">
+
+    <!-- PANTALLA DE LOGIN -->
+    <div id="login-overlay">
+        <div class="login-box">
+            <h3 class="text-xl font-bold text-slate-800 mb-1">Panel Protegido</h3>
+            <p class="text-xs text-slate-500 mb-4">Ingresá tus credenciales de administración</p>
+            <input type="text" id="usuario" placeholder="Usuario">
+            <input type="password" id="contrasena" placeholder="Contraseña">
+            <button onclick="verificarLogin()">Ingresar al Sistema</button>
+            <div id="error-msg" class="error-msg"></div>
+            <div class="mt-4 border-t pt-3">
+                <a href="index.html" class="text-xs text-slate-400 hover:text-slate-600 underline">← Volver al inicio (Alumnos)</a>
+            </div>
+        </div>
+    </div>
+
+    <div id="notification-container" class="fixed top-5 right-5 z-50 flex flex-col gap-3.5"></div>
+
+    <!-- CONTENIDO ADMINISTRADOR -->
+    <div id="contenido-admin" class="oculto w-[95%] max-w-5xl flex-col items-center">
+        <div class="w-full py-6 px-4 rounded-b-2xl shadow-lg border-b-4 border-pink-600 text-center relative overflow-hidden mb-6 text-white mt-0"
+             style="background-image: linear-gradient(rgba(26, 54, 93, 0.85), rgba(26, 54, 93, 0.85)), url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSSPFDgrwRHjbVD_Nl2JOmBWqz6hX457GV0IMJ6j2isnXOXOOO2EMhH0W0&s=10'); background-size: 100% 100%; background-repeat: no-repeat; background-position: center;">
+            <div class="flex justify-between items-center max-w-4xl mx-auto px-4">
+                <div></div>
+                <h1 class="m-0 text-2xl md:text-3xl font-extrabold uppercase tracking-wider drop-shadow-sm">Panel de Control</h1>
+                <a href="index.html" class="text-xs bg-white/20 hover:bg-white/30 text-white px-3 py-1.5 rounded-lg font-bold transition-all">Salir</a>
+            </div>
+        </div>
+
+        <div class="w-full grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
+                <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Total Escuela</span>
+                <span id="stat-total" class="text-2xl font-extrabold text-slate-800">0</span>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
+                <span class="text-[11px] font-bold text-emerald-600 uppercase tracking-wider block">Presentes</span>
+                <span id="stat-presentes" class="text-2xl font-extrabold text-emerald-600">0</span>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
+                <span class="text-[11px] font-bold text-amber-600 uppercase tracking-wider block">Ausentes</span>
+                <span id="stat-ausentes" class="text-2xl font-extrabold text-amber-600">0</span>
+            </div>
+            <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm text-center">
+                <span class="text-[11px] font-bold text-red-600 uppercase tracking-wider block">Desaprobados</span>
+                <span id="stat-desaprobados" class="text-2xl font-extrabold text-red-600">0</span>
+            </div>
+        </div>
+
+        <div class="w-full grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+            <div id="scanner-container-box" class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col md:col-span-1 transition-all duration-300">
+                <h2 id="scanner-title" class="text-lg font-bold text-slate-800 border-b pb-2 mb-2">📸 Escáner de Entrada</h2>
+                <div id="reader" class="w-full max-w-[260px] mx-auto rounded-xl overflow-hidden shadow-inner !border-0"></div>
+                <div id="scanner-msg" class="mt-3 text-center text-xs font-bold text-slate-500">Esperando escaneo...</div>
+            </div>
+
+            <div class="bg-white rounded-2xl p-6 shadow-sm border border-slate-100 overflow-hidden md:col-span-2 flex flex-col">
+                <div class="w-full bg-white">
+                    <h2 class="text-lg font-bold text-slate-800 mb-1">Planilla en Tiempo Real</h2>
+                    
+                    <div class="my-4 no-export">
+                        <label class="text-xs font-bold text-slate-500 uppercase block mb-2">Seleccionar Escuela a Visualizar:</label>
+                        <div id="botones-selector-escuela" class="grid grid-cols-2 sm:grid-cols-4 gap-2">
+                            <button onclick="cambiarEscuelaActiva('ABC')" id="btn-escuela-ABC" class="py-2 px-3 rounded-xl text-xs font-bold transition-all bg-slate-900 text-white shadow">Escuela ABC</button>
+                            <button onclick="cambiarEscuelaActiva('Nivel 1')" id="btn-escuela-Nivel 1" class="py-2 px-3 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">Nivel 1</button>
+                            <button onclick="cambiarEscuelaActiva('Nivel 2')" id="btn-escuela-Nivel 2" class="py-2 px-3 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">Nivel 2</button>
+                            <button onclick="cambiarEscuelaActiva('Nivel 3')" id="btn-escuela-Nivel 3" class="py-2 px-3 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-slate-200">Nivel 3</button>
+                        </div>
+                    </div>
+
+                    <div class="my-3 no-export">
+                        <input type="text" id="buscador-alumnos" placeholder="🔍 Buscar por Nombre, Edad o Líder..." class="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:border-pink-500 focus:outline-none shadow-inner">
+                    </div>
+
+                    <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 my-4 no-export space-y-3">
+                        <span class="text-xs font-bold text-slate-600 uppercase block">📊 Exportar Reportes a Excel:</span>
+                        
+                        <div class="flex items-center">
+                            <button onclick="descargarExcelEscuelaActual()" class="w-full bg-[#1b4f72] text-white font-bold py-2 px-3 rounded-lg text-xs shadow hover:opacity-90">📥 Exportar Escuela Actual Completa (Excel)</button>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row gap-2 items-center pt-2 border-t border-slate-200">
+                            <select id="select-lider-activo" class="p-2 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-700 w-full sm:w-auto flex-1 focus:outline-none">
+                                <option value="">-- Seleccionar Líder (Escuela Actual) --</option>
+                            </select>
+                            <button onclick="descargarExcelLiderEscuelaActual()" class="w-full sm:w-auto bg-[#1f7244] text-white font-bold py-2 px-3 rounded-lg text-xs shadow hover:opacity-90 whitespace-nowrap">🟢 Excel (Líder en esta Escuela)</button>
+                        </div>
+
+                        <div class="flex flex-col sm:flex-row gap-2 items-center pt-2 border-t border-slate-200">
+                            <select id="select-lider-global" class="p-2 bg-white border border-slate-300 rounded-lg text-xs font-bold text-slate-700 w-full sm:w-auto flex-1 focus:outline-none">
+                                <option value="">-- Seleccionar Líder (Todas las Escuelas) --</option>
+                            </select>
+                            <button onclick="descargarExcelLiderGlobal()" class="w-full sm:w-auto bg-[#145a32] text-white font-bold py-2 px-3 rounded-lg text-xs shadow hover:opacity-90 whitespace-nowrap">🟢 Excel (Total Líder en Todas)</button>
+                        </div>
+                    </div>
+
+                    <div id="contenedor-escuelas" class="space-y-6"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DEFINÍ TU USUARIO Y CONTRASEÑA AQUÍ
+        const USUARIO_VALIDO = "Miguel";
+        const CLAVE_VALIDA = "8570";
+
+        function verificarLogin() {
+            const user = document.getElementById("usuario").value.trim();
+            const pass = document.getElementById("contrasena").value.trim();
+
+            if (user === USUARIO_VALIDO && pass === CLAVE_VALIDA) {
+                document.getElementById("login-overlay").classList.add("oculto");
+                document.getElementById("contenido-admin").classList.remove("oculto");
+                document.getElementById("contenido-admin").classList.add("flex");
+                actualizarTabla();
+                inicializarEscaner();
+            } else {
+                document.getElementById("error-msg").innerText = "Usuario o contraseña incorrectos.";
+            }
+        }
+
+        let alumnos = [];
+        let scannerInstancia = null;
+
+        function reproducirSonido(tipo) {
+            try {
+                const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                const osc = audioCtx.createOscillator();
+                const gain = audioCtx.createGain();
+                osc.connect(gain);
+                gain.connect(audioCtx.destination);
+                
+                if (tipo === 'success') {
+                    osc.frequency.setValueAtTime(600, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(900, audioCtx.currentTime + 0.15);
+                    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.15);
+                } else {
+                    osc.frequency.setValueAtTime(350, audioCtx.currentTime);
+                    osc.frequency.exponentialRampToValueAtTime(150, audioCtx.currentTime + 0.25);
+                    gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+                    osc.start();
+                    osc.stop(audioCtx.currentTime + 0.25);
+                }
+            } catch(e) {}
+        }
+
+        function cargarDatosIniciales() {
+            const guardados = localStorage.getItem('alumnos_sistema_asistencia_v5');
+            if (guardados) {
+                try { alumnos = JSON.parse(guardados); return; } catch(e) {}
+            }
+            
+            const escuelas = [{ nombre: "ABC", cantidad: 20 }, { nombre: "Nivel 1", cantidad: 20 }, { nombre: "Nivel 2", cantidad: 20 }, { nombre: "Nivel 3", cantidad: 20 }];
+            const lideres = ["Carlos Gómez", "Marcos Silva", "Valeria Ríos", "Sin líder"];
+            const nombresBase = ["Axel", "Brenda", "Cristian", "Delfina", "Enzo", "Francina", "Gael", "Hannah", "Ian", "Jazmín", "Kevin", "Lara", "Mateo", "Noelia", "Oriel", "Pilar", "Renzo", "Selena", "Thiago", "Úrsula"];
+            const apellidosBase = ["Acosta", "Barrios", "Cabral", "Domínguez", "Escobar", "Flores", "Godoy", "Herrera", "Ibarra", "Jara"];
+
+            let idContador = 1000;
+            escuelas.forEach(esc => {
+                for (let i = 1; i <= esc.cantidad; i++) {
+                    idContador++;
+                    alumnos.push({
+                        id: idContador.toString(),
+                        escuela: esc.nombre,
+                        nombreCompleto: nombresBase[(i * 7) % nombresBase.length] + " " + apellidosBase[(i * 3) % apellidosBase.length],
+                        edad: (18 + (i % 30)).toString(),
+                        lider: lideres[(i + esc.nombre.length) % lideres.length],
+                        celular: "11" + Math.floor(10000000 + Math.random() * 90000000),
+                        faltas: i % 5,
+                        condicionManual: null,
+                        estado: "Ausente"
+                    });
+                }
+            });
+            guardarEnStorage();
+        }
+
+        function guardarEnStorage() {
+            localStorage.setItem('alumnos_sistema_asistencia_v5', JSON.stringify(alumnos));
+        }
+
+        cargarDatosIniciales();
+        let escuelaSeleccionada = "ABC"; 
+
+        function mostrarViñeta(mensaje, tipo = 'success') {
+            const vineta = document.createElement('div');
+            let color = tipo === 'error' ? 'bg-red-500' : (tipo === 'warning' ? 'bg-amber-500' : 'bg-emerald-500');
+            vineta.className = `p-4 rounded-xl text-white font-bold shadow-lg min-w-[260px] ${color} flex items-center justify-between`;
+            vineta.innerHTML = `<span>${mensaje}</span><strong class="ml-3 cursor-pointer opacity-70" onclick="this.parentElement.remove()">×</strong>`;
+            document.getElementById('notification-container').appendChild(vineta);
+            setTimeout(() => vineta.remove(), 4000);
+        }
+
+        function cambiarEscuelaActiva(nombreEscuela) {
+            escuelaSeleccionada = nombreEscuela;
+            ["ABC", "Nivel 1", "Nivel 2", "Nivel 3"].forEach(esc => {
+                const btn = document.getElementById(`btn-escuela-${esc}`);
+                if (btn) {
+                    btn.className = esc === nombreEscuela ? "py-2 px-3 rounded-xl text-xs font-bold transition-all bg-slate-900 text-white shadow" : "py-2 px-3 rounded-xl text-xs font-bold transition-all bg-slate-100 text-slate-600 hover:bg-slate-200";
+                }
+            });
+            actualizarTabla();
+        }
+
+        function actualizarSelectoresLideres() {
+            const selectLiderActivo = document.getElementById('select-lider-activo');
+            const selectLiderGlobal = document.getElementById('select-lider-global');
+            
+            const valorActivoAnterior = selectLiderActivo.value;
+            const valorGlobalAnterior = selectLiderGlobal.value;
+
+            const alumnosDeEscuela = alumnos.filter(al => al.escuela.trim().toLowerCase() === escuelaSeleccionada.toLowerCase());
+            const lideresEscuelaUnicos = [...new Set(alumnosDeEscuela.map(a => a.lider))].sort();
+
+            selectLiderActivo.innerHTML = `<option value="">-- Seleccionar Líder (${escuelaSeleccionada}) --</option>`;
+            lideresEscuelaUnicos.forEach(lider => {
+                const opt = document.createElement('option');
+                opt.value = lider; opt.innerText = lider;
+                selectLiderActivo.appendChild(opt);
+            });
+            if (lideresEscuelaUnicos.includes(valorActivoAnterior)) selectLiderActivo.value = valorActivoAnterior;
+
+            const lideresGlobalesUnicos = [...new Set(alumnos.map(a => a.lider))].sort();
+            selectLiderGlobal.innerHTML = `<option value="">-- Seleccionar Líder (Todas las Escuelas) --</option>`;
+            lideresGlobalesUnicos.forEach(lider => {
+                const opt = document.createElement('option');
+                opt.value = lider; opt.innerText = lider;
+                selectLiderGlobal.appendChild(opt);
+            });
+            if (lideresGlobalesUnicos.includes(valorGlobalAnterior)) selectLiderGlobal.value = valorGlobalAnterior;
+        }
+
+        function actualizarTabla() {
+            actualizarSelectoresLideres();
+            const contenedor = document.getElementById('contenedor-escuelas');
+            contenedor.innerHTML = "";
+            const filtro = document.getElementById('buscador-alumnos').value.toLowerCase().trim();
+
+            const nombreEscuela = escuelaSeleccionada;
+            let alumnosEscuela = alumnos.filter(al => {
+                const coincideEscuela = al.escuela.trim().toLowerCase() === nombreEscuela.toLowerCase();
+                const coincideBusqueda = al.nombreCompleto.toLowerCase().includes(filtro) || al.edad.includes(filtro) || al.lider.toLowerCase().includes(filtro);
+                return coincideEscuela && (!filtro || coincideBusqueda);
+            });
+
+            alumnosEscuela.sort((a, b) => {
+                const liderA = (a.lider || "").toLowerCase();
+                const liderB = (b.lider || "").toLowerCase();
+                if (liderA < liderB) return -1;
+                if (liderA > liderB) return 1;
+                return (a.nombreCompleto || "").toLowerCase().localeCompare((b.nombreCompleto || "").toLowerCase());
+            });
+
+            let totalEscuela = alumnos.filter(al => al.escuela.trim().toLowerCase() === nombreEscuela.toLowerCase());
+            document.getElementById('stat-total').innerText = totalEscuela.length;
+            document.getElementById('stat-presentes').innerText = totalEscuela.filter(al => al.estado === "Presente").length;
+            document.getElementById('stat-ausentes').innerText = totalEscuela.filter(al => al.estado === "Ausente").length;
+            document.getElementById('stat-desaprobados').innerText = totalEscuela.filter(al => (al.condicionManual !== null ? al.condicionManual : (al.faltas >= 4 ? "Libre / Desaprobado" : "Aprobado")) === "Libre / Desaprobado").length;
+
+            const divEscuela = document.createElement('div');
+            divEscuela.className = "bg-white border border-slate-200 rounded-xl overflow-hidden shadow-sm mb-4";
+            
+            let htmlTabla = `
+                <div class="bg-slate-900 text-white px-4 py-2.5 font-bold text-sm uppercase tracking-wider flex justify-between items-center">
+                    <span>Escuela: ${nombreEscuela}</span>
+                    <span class="text-xs bg-pink-600 px-2 py-0.5 rounded-full">${alumnosEscuela.length} alumnos mostrados</span>
+                </div>
+                <div class="max-h-[500px] overflow-y-auto custom-scroll">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead class="sticky top-0 bg-slate-50 z-10 shadow-sm">
+                            <tr class="border-b border-slate-200 font-bold uppercase text-slate-600">
+                                <th class="p-3 bg-slate-50">Alumno</th>
+                                <th class="p-3 bg-slate-50">Edad</th>
+                                <th class="p-3 bg-slate-50">Líder / Cel</th>
+                                <th class="p-3 text-center bg-slate-50">Faltas</th>
+                                <th class="p-3 bg-slate-50">Condición</th>
+                                <th class="p-3 no-export bg-slate-50">Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100">
+            `;
+
+            if (alumnosEscuela.length === 0) {
+                htmlTabla += `<tr><td colspan="6" class="p-4 text-center text-slate-400 italic">No hay alumnos registrados en esta sección.</td></tr>`;
+            } else {
+                alumnosEscuela.forEach((al) => {
+                    const realIdx = alumnos.findIndex(item => item.id === al.id);
+                    let condicionFinal = al.condicionManual !== null ? al.condicionManual : (al.faltas >= 4 ? "Libre / Desaprobado" : "Aprobado");
+                    let colorFila = condicionFinal === "Libre / Desaprobado" ? "bg-red-50 hover:bg-red-100 border-l-4 border-red-500 text-red-950" : (al.estado === "Presente" ? "bg-emerald-50/40 hover:bg-emerald-50" : "hover:bg-slate-50");
+                    let esSinLider = al.lider.toLowerCase().includes("sin líder") || al.lider.toLowerCase().includes("sin lider");
+                    let formatoLider = esSinLider ? `<span class="uppercase font-extrabold italic text-amber-600 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">SIN LÍDER</span>` : `<span class="font-semibold text-slate-700">${al.lider}</span>`;
+
+                    htmlTabla += `
+                        <tr class="border-b border-slate-100 ${colorFila}">
+                            <td class="p-3 font-semibold">${al.nombreCompleto.toUpperCase()}</td>
+                            <td class="p-3 text-slate-600 font-mono">${al.edad} años</td>
+                            <td class="p-3">${formatoLider}<br><span class="text-[10px] text-pink-600 font-bold">Cel: ${al.celular}</span></td>
+                            <td class="p-3 text-center">
+                                <div class="inline-flex items-center gap-1.5 bg-slate-100 px-2 py-1 rounded-lg border border-slate-200">
+                                    <button onclick="cambiarFaltas(${realIdx}, -1)" class="w-5 h-5 bg-white rounded shadow-sm text-slate-700 font-bold hover:bg-red-100 hover:text-red-600 flex items-center justify-center">-</button>
+                                    <span class="font-extrabold text-sm px-1 min-w-[18px] text-center">${al.faltas}</span>
+                                    <button onclick="cambiarFaltas(${realIdx}, 1)" class="w-5 h-5 bg-white rounded shadow-sm text-slate-700 font-bold hover:bg-emerald-100 hover:text-emerald-600 flex items-center justify-center">+</button>
+                                </div>
+                            </td>
+                            <td class="p-3">
+                                <select onchange="cambiarCondicionManual(${realIdx}, this.value)" class="p-1.5 border rounded text-xs font-bold uppercase bg-white shadow-sm ${condicionFinal==='Aprobado'?'text-emerald-700 border-emerald-300':'text-red-700 border-red-300'}">
+                                    <option value="Aprobado" ${condicionFinal==='Aprobado'?'selected':''}>Aprobado</option>
+                                    <option value="Libre / Desaprobado" ${condicionFinal==='Libre / Desaprobado'?'selected':''}>Libre / Desaprobado</option>
+                                </select>
+                            </td>
+                            <td class="p-3 no-export">
+                                <select onchange="modificarEstado(${realIdx}, this.value)" class="p-1 border rounded text-xs bg-white font-bold ${al.estado==='Presente'?'text-emerald-600':'text-slate-600'}">
+                                    <option value="Presente" ${al.estado==='Presente'?'selected':''}>Presente</option>
+                                    <option value="Ausente" ${al.estado==='Ausente'?'selected':''}>Ausente</option>
+                                </select>
+                            </td>
+                        </tr>
+                    `;
+                });
+            }
+            htmlTabla += `</tbody></table></div>`;
+            divEscuela.innerHTML = htmlTabla;
+            contenedor.appendChild(divEscuela);
+        }
+
+        document.getElementById('buscador-alumnos').addEventListener('input', actualizarTabla);
+
+        function cambiarFaltas(idx, cantidad) {
+            alumnos[idx].faltas = Math.max(0, alumnos[idx].faltas + cantidad);
+            guardarEnStorage(); actualizarTabla(); mostrarViñeta("Faltas actualizadas", "success");
+        }
+
+        function cambiarCondicionManual(idx, nuevaCondicion) {
+            alumnos[idx].condicionManual = nuevaCondicion;
+            guardarEnStorage(); actualizarTabla(); mostrarViñeta(`Condición cambiada: ${nuevaCondicion}`, "success");
+        }
+
+        function modificarEstado(idx, nuevoEstado) {
+            alumnos[idx].estado = nuevoEstado;
+            guardarEnStorage(); actualizarTabla(); mostrarViñeta("Estado actualizado", "success");
+        }
+
+        function descargarExcelEscuelaActual() {
+            const filtrados = alumnos.filter(al => al.escuela.trim().toLowerCase() === escuelaSeleccionada.toLowerCase());
+            const datosExportar = filtrados.map(a => ({
+                Escuela: a.escuela, Lider: a.lider, Alumno: a.nombreCompleto, Edad: a.edad, Celular: a.celular, Faltas: a.faltas,
+                Condicion: a.condicionManual !== null ? a.condicionManual : (a.faltas >= 4 ? "Libre / Desaprobado" : "Aprobado"), Estado: a.estado
+            }));
+            const s = XLSX.utils.json_to_sheet(datosExportar); const b = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(b, s, "Escuela"); XLSX.writeFile(b, `Reporte_Escuela_${escuelaSeleccionada}.xlsx`);
+            mostrarViñeta("Excel generado.", "success");
+        }
+
+        function descargarExcelLiderEscuelaActual() {
+            const liderSeleccionado = document.getElementById('select-lider-activo').value;
+            if (!liderSeleccionado) return mostrarViñeta("⚠️ Seleccioná un líder.", "warning");
+            const filtrados = alumnos.filter(al => al.escuela.trim().toLowerCase() === escuelaSeleccionada.toLowerCase() && al.lider === liderSeleccionado);
+            const datosExportar = filtrados.map(a => ({
+                Escuela: a.escuela, Lider: a.lider, Alumno: a.nombreCompleto, Edad: a.edad, Celular: a.celular, Faltas: a.faltas,
+                Condicion: a.condicionManual !== null ? a.condicionManual : (a.faltas >= 4 ? "Libre / Desaprobado" : "Aprobado"), Estado: a.estado
+            }));
+            const s = XLSX.utils.json_to_sheet(datosExportar); const b = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(b, s, "Lider"); XLSX.writeFile(b, `Reporte_${escuelaSeleccionada}_Lider_${liderSeleccionado}.xlsx`);
+            mostrarViñeta("Excel generado.", "success");
+        }
+
+        function descargarExcelLiderGlobal() {
+            const liderSeleccionado = document.getElementById('select-lider-global').value;
+            if (!liderSeleccionado) return mostrarViñeta("⚠️ Seleccioná un líder.", "warning");
+            const filtrados = alumnos.filter(al => al.lider === liderSeleccionado);
+            const datosExportar = filtrados.map(a => ({
+                Escuela: a.escuela, Lider: a.lider, Alumno: a.nombreCompleto, Edad: a.edad, Celular: a.celular, Faltas: a.faltas,
+                Condicion: a.condicionManual !== null ? a.condicionManual : (a.faltas >= 4 ? "Libre / Desaprobado" : "Aprobado"), Estado: a.estado
+            }));
+            const s = XLSX.utils.json_to_sheet(datosExportar); const b = XLSX.utils.book_new(); XLSX.utils.book_append_sheet(b, s, "Total_Lider"); XLSX.writeFile(b, `Reporte_Global_Lider_${liderSeleccionado}.xlsx`);
+            mostrarViñeta("Excel generado.", "success");
+        }
+
+        function inicializarEscaner() {
+            if (scannerInstancia) return;
+            scannerInstancia = new Html5QrcodeScanner("reader", { fps: 15, qrbox: 200 });
+            const boxScanner = document.getElementById('scanner-container-box');
+            const msgScanner = document.getElementById('scanner-msg');
+
+            scannerInstancia.render(async (idLeido) => {
+                let al = alumnos.find(a => a.id === idLeido.trim());
+                if (al) {
+                    if (al.estado === "Presente") {
+                        reproducirSonido('error');
+                        boxScanner.className = "bg-amber-100 rounded-2xl p-6 shadow-md border-2 border-amber-500 flex flex-col md:col-span-1 transition-all duration-300";
+                        msgScanner.innerText = `⚠️ ATENCIÓN: ¡${al.nombreCompleto} ya ingresó!`;
+                        mostrarViñeta(`⚠️ ${al.nombreCompleto} ya figuraba como Presente.`, "warning");
+                        return;
+                    }
+                    let cond = al.condicionManual !== null ? al.condicionManual : (al.faltas >= 4 ? "Libre / Desaprobado" : "Aprobado");
+                    if (cond === "Libre / Desaprobado") {
+                        reproducirSonido('error');
+                        boxScanner.className = "bg-red-100 rounded-2xl p-6 shadow-md border-2 border-red-500 flex flex-col md:col-span-1 transition-all duration-300";
+                        msgScanner.innerText = `❌ DENEGADO: Alumno Libre/Desaprobado.`;
+                        mostrarViñeta(`❌ Alumno desaprobado: ${al.nombreCompleto}`, "error");
+                        return;
+                    }
+                    reproducirSonido('success');
+                    boxScanner.className = "bg-emerald-100 rounded-2xl p-6 shadow-md border-2 border-emerald-500 flex flex-col md:col-span-1 transition-all duration-300";
+                    msgScanner.innerText = `✅ ACCESO CORRECTO: ${al.nombreCompleto}`;
+                    al.estado = "Presente";
+                    guardarEnStorage(); actualizarTabla();
+                    mostrarViñeta(`✅ Presente: ${al.nombreCompleto}`, "success");
+                    setTimeout(() => {
+                        boxScanner.className = "bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col md:col-span-1 transition-all duration-300";
+                        msgScanner.innerText = "Esperando escaneo...";
+                    }, 3000);
+                } else {
+                    reproducirSonido('error');
+                    boxScanner.className = "bg-red-100 rounded-2xl p-6 shadow-md border-2 border-red-500 flex flex-col md:col-span-1 transition-all duration-300";
+                    msgScanner.innerText = `❌ CREDENCIAL NO ENCONTRADA`;
+                    mostrarViñeta("❌ Credencial no encontrada.", "error");
+                    setTimeout(() => {
+                        boxScanner.className = "bg-white rounded-2xl p-6 shadow-sm border border-slate-100 flex flex-col md:col-span-1 transition-all duration-300";
+                        msgScanner.innerText = "Esperando escaneo...";
+                    }, 3000);
+                }
+            });
+        }
+    </script>
+</body>
+</html>
