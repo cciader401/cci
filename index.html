@@ -23,23 +23,28 @@
             opacity: 0.05; 
             pointer-events: none;
         }
+
+        /* Asegura que el video cubra toda la pantalla */
+        #video-intro {
+            width: 100%;
+            height: 100%;
+            object-fit: cover; /* Hace que la imagen se ajuste recortándose si es necesario para llenar el espacio */
+        }
     </style>
 </head>
 <body class="text-slate-800 font-sans min-h-screen flex flex-col items-center justify-center antialiased pb-10" style="background-color: #fafbfd;">
 
-    <!-- PANTALLA DE INTRO (VIDEO INICIAL) -->
-    <div id="intro-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950 transition-opacity duration-700">
-        <video id="video-intro" autoplay muted playsinline class="w-full h-full object-cover">
-            <source src="intro.mp4" type="video/mp4">
-            Tu navegador no soporta la reproducción de videos.
+    <div id="intro-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950 transition-opacity duration-1000">
+        <video id="video-intro" autoplay muted playsinline loop>
+            <source src="https://cciader401.github.io/escuelas-cci/intro.mp4" type="video/mp4">
+            Tu navegador no soporta la reproducción de videos. Actualízalo.
         </video>
-        <!-- Botón por si el usuario quiere saltarla antes -->
-        <button onclick="cerrarIntro()" class="absolute bottom-8 right-8 bg-white/20 hover:bg-white/40 text-white text-xs font-bold px-4 py-2 rounded-full backdrop-blur-sm transition-all">
+        <button onclick="cerrarIntro()" class="absolute bottom-8 right-8 bg-white/30 hover:bg-white/50 text-white text-xs font-bold px-4 py-2 rounded-full backdrop-blur-sm transition-all z-[55]">
             Saltar intro ✕
         </button>
     </div>
 
-    <div id="notification-container" class="fixed top-5 right-5 z-50 flex flex-col gap-3.5"></div>
+    <div id="notification-container" class="fixed top-5 right-5 z-40 flex flex-col gap-3.5"></div>
 
     <div class="w-full max-w-md py-6 px-4 rounded-b-2xl shadow-lg border-b-4 border-pink-600 text-center relative overflow-hidden mb-6 text-white"
          style="background-image: linear-gradient(rgba(26, 54, 93, 0.85), rgba(26, 54, 93, 0.85)), url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSSPFDgrwRHjbVD_Nl2JOmBWqz6hX457GV0IMJ6j2isnXOXOOO2EMhH0W0&s=10'); background-size: 100% 100%; background-repeat: no-repeat; background-position: center;">
@@ -47,7 +52,6 @@
         <p class="m-0 mt-1 text-slate-200 text-xs">Portal de Inscripción de Alumnos</p>
     </div>
 
-    <!-- VISTA INSCRIPCIÓN ALUMNO -->
     <div id="vista-alumno" class="w-[95%] max-w-md bg-white rounded-2xl p-6 shadow-md border border-slate-100 flex flex-col text-center">
         <h2 class="text-2xl font-bold text-slate-800 mb-2">Inscripción a Escuela</h2>
         <p class="text-xs text-slate-400 mb-6">Ingresá tus datos para registrarte y generar tu credencial.</p>
@@ -97,18 +101,31 @@
     </div>
 
     <script>
-        // Lógica para cerrar la intro de forma automática cuando termina el video o al hacer clic en saltar
+        // --- LÓGICA DE LA INTRO ---
+        const introScreen = document.getElementById('intro-screen');
+        const videoIntro = document.getElementById('video-intro');
+
         function cerrarIntro() {
-            const introScreen = document.getElementById('intro-screen');
-            introScreen.style.opacity = '0';
+            introScreen.style.opacity = '0'; // Desvanece
+            // Espera a que termine la transición (1 segundo) antes de ocultarlo
             setTimeout(() => {
                 introScreen.style.display = 'none';
-            }, 700); // Coincide con la duración de la transición en milisegundos
+                videoIntro.pause(); // Pausa el video para ahorrar recursos
+            }, 1000);
         }
 
-        const videoIntro = document.getElementById('video-intro');
+        // Intenta reproducir el video (los navegadores pueden bloquearlo si no hay interacción)
+        videoIntro.play().catch(error => {
+            console.warn("El navegador bloqueó la reproducción automática, mostrando controles:", error);
+            // Si falla, fuerza que aparezcan los controles para que el usuario pueda iniciarlo
+            videoIntro.setAttribute('controls', 'controls');
+        });
+
+        // Cierra la intro automáticamente cuando termina el video
         videoIntro.addEventListener('ended', cerrarIntro);
 
+
+        // --- LÓGICA DE LA APP ---
         let alumnos = [];
 
         function cargarDatosIniciales() {
