@@ -34,9 +34,9 @@
 <body class="text-slate-800 font-sans min-h-screen flex flex-col items-center justify-center antialiased pb-10" style="background-color: #fafbfd;">
 
     <div id="intro-screen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950 transition-opacity duration-1000">
-        <video id="video-intro" autoplay playsinline controls>
+        <video id="video-intro" autoplay playsinline muted>
             <source src="https://cciader401.github.io/escuelas-cci/lv_0_20260831083629~2.mp4" type="video/mp4">
-            Tu navegador no soporta la reproducción de videos. Actualízalo.
+            Tu navegador no soporta la reproducción de videos.
         </video>
         <button onclick="cerrarIntro()" class="absolute bottom-8 right-8 bg-white/30 hover:bg-white/50 text-white text-xs font-bold px-4 py-2 rounded-full backdrop-blur-sm transition-all z-[55]">
             Saltar intro ✕
@@ -111,12 +111,16 @@
             }, 1000);
         }
 
-        // Intenta reproducir el video con audio
-        videoIntro.play().catch(error => {
-            console.warn("Reproducción automática bloqueada por el navegador:", error);
+        // Truco técnico para navegadores móviles: arranca en mute para garantizar la reproducción automática sin que se quede en negro, y al instante le activa el sonido (muted = false)
+        videoIntro.play().then(() => {
+            setTimeout(() => {
+                videoIntro.muted = false;
+            }, 200); // Activa el audio a los 0.2 segundos de haber arrancado
+        }).catch(error => {
+            console.warn("Restricción de navegador:", error);
         });
 
-        // Evento que detecta cuando el video termina de reproducirse una sola vez para cerrarlo automáticamente
+        // Cierra automáticamente el video apenas termina de reproducirse una vez
         videoIntro.addEventListener('ended', cerrarIntro);
 
         let alumnos = [];
